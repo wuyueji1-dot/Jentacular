@@ -1,0 +1,163 @@
+name: Build and Verify Jentacular
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS App
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode Version
+        run: |
+          xcodebuild -version
+          echo "---"
+          xcrun simctl list devices available | grep "iPhone 16" | head -5
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          # Convert CRLF to LF for all source files
+          find . -name "*.swift" -exec sed -i 's/\r$//' {} \;
+          find . -name "*.plist" -exec sed -i 's/\r$//' {} \;
+          find . -name "*.yml" -exec sed -i 's/\r$//' {} \;
+          # Remove entitlements for simulator build (will be re-added for release)
+          sed -i '' '/CODE_SIGN_ENTITLEMENTS/d' project.yml
+          xcodegen generate
+          echo "=== Project generated ==="
+          ls -la Jentacular.xcodeproj
+          echo "=== Schemes ==="
+          xcodebuild -project Jentacular.xcodeproj -list
+
+      - name: Build (iOS Simulator)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Jentacular.xcodeproj \
+            -scheme "Jentacular" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            > build.log 2>&1
+          BUILD_EXIT=$?
+          echo "BUILD_EXIT_CODE=$BUILD_EXIT" >> $GITHUB_ENV
+          echo "=== Build output (last 80 lines) ==="
+          tail -80 build.log
+          exit $BUILD_EXIT
+
+      - name: Check Build Result
+        if: always()
+        run: |
+          if grep -q "BUILD SUCCEEDED" build.log; then
+            echo "✅ BUILD SUCCEEDED"
+          elif grep -q "BUILD FAILED" build.log; then
+            echo "❌ BUILD FAILED"
+            echo "=== Errors ==="
+            grep -i "error:" build.log | head -30
+            exit 1
+          else
+            echo "⚠️  No explicit status in log"
+            echo "=== Last 30 lines ==="
+            tail -30 build.log
+            echo "=== Errors (if any) ==="
+            grep -i "error:" build.log | head -20
+            if [ "${{ env.BUILD_EXIT_CODE }}" = "0" ]; then
+              echo "✅ Exit code 0 - treating as success"
+            else
+              echo "❌ Exit code ${{ env.BUILD_EXIT_CODE }}"
+              exit 1
+            fi
+          fi
+
+      - name: Upload Build Log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7
+
+      - name: Boot iPhone Simulator
+        if: success()
+        run: |
+          echo "=== Erase simulator (clean state) ==="
+          xcrun simctl erase "iPhone 16 Pro" 2>&1 || echo "Erase warning (may be ok)"
+          echo "=== Booting iPhone 16 Pro ==="
+          xcrun simctl boot "iPhone 16 Pro" 2>/dev/null || echo "Simulator may already be booted"
+          sleep 10
+
+      - name: Install App to Simulator
+        if: success()
+        run: |
+          echo "=== Finding built .app ==="
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Jentacular.app" -type d 2>/dev/null | grep "Debug-iphonesimulator" | head -1)
+          echo "App path: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: .app not found in DerivedData"
+            find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null | head -10
+            exit 1
+          fi
+          echo "=== Deep sign the app ==="
+          codesign --force --deep --sign - "$APP_PATH" 2>&1
+          echo "=== Installing app ==="
+          xcrun simctl install booted "$APP_PATH"
+          echo "App installed successfully"
+
+      - name: Launch App and Screenshot All Screens
+        if: success()
+        run: |
+          mkdir -p screenshots
+          BUNDLE_ID="com.hitvpn.hitvpn2026"
+
+          # Set privacy consent as seen to skip onboarding
+          xcrun simctl spawn booted defaults write $BUNDLE_ID has_seen_privacy_consent -bool true
+
+          # Function to screenshot a specific tab
+          screenshot_tab() {
+            local tab_num=$1
+            local tab_name=$2
+            echo "=== Screenshotting tab: $tab_name ==="
+
+            xcrun simctl spawn booted defaults write $BUNDLE_ID DebugSelectedTab -int $tab_num
+
+            xcrun simctl terminate booted $BUNDLE_ID 2>/dev/null || echo "App not running"
+            sleep 1
+
+            xcrun simctl launch booted $BUNDLE_ID 2>&1
+            sleep 4
+
+            xcrun simctl spawn booted launchctl list | grep -i "hitvpn" || echo "App not running"
+
+            xcrun simctl io booted screenshot "screenshots/${tab_name}.png" || echo "screenshot failed"
+            echo "Saved: screenshots/${tab_name}.png"
+          }
+
+          # Screenshot each tab (0=home, 1=shield, 2=servers, 3=analysis, 4=settings)
+          screenshot_tab 0 "01_Home"
+          screenshot_tab 1 "02_Shield"
+          screenshot_tab 2 "03_Servers"
+          screenshot_tab 3 "04_Analysis"
+          screenshot_tab 4 "05_Settings"
+
+          echo "=== All screenshots ==="
+          ls -la screenshots/
+
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshots
+          path: screenshots/
+          retention-days: 30
