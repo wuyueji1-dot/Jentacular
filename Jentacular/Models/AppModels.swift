@@ -94,6 +94,23 @@ enum NetworkType: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - Security Score Enums
+enum SecurityStatus {
+    case good
+    case warning
+    case critical
+    case neutral
+}
+
+enum ColorTheme {
+    case red
+    case green
+    case gold
+    case blue
+    case purple
+    case cyan
+}
+
 // MARK: - Security Score Item
 struct SecurityItem: Identifiable, Hashable {
     let id = UUID()
@@ -102,22 +119,6 @@ struct SecurityItem: Identifiable, Hashable {
     let iconName: String
     let iconColor: ColorTheme
     let status: SecurityStatus
-
-    enum SecurityStatus {
-        case good
-        case warning
-        case critical
-        case neutral
-    }
-
-    enum ColorTheme {
-        case red
-        case green
-        case gold
-        case blue
-        case purple
-        case cyan
-    }
 }
 
 // MARK: - Network Analysis Metrics
