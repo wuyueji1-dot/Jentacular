@@ -150,6 +150,11 @@
 // Help
 "help_quick_actions" = "Быстрые действия";
 "help_categories" = "Категории";
+"help_category_connection" = "Подключение";
+"help_category_account" = "Аккаунт";
+"help_category_security" = "Безопасность";
+"help_category_technical" = "Технические";
+"help_category_billing" = "Оплата";
 "help_faq" = "Популярные вопросы";
 "help_contact" = "Связаться с поддержкой";
 "help_contact_desc" = "Если вы не нашли ответ на свой вопрос, наша команда поддержки готова помочь.";
@@ -163,6 +168,7 @@
 "our_principles" = "Наши принципы";
 "data_collected" = "Какие данные мы собираем";
 "our_guarantee" = "Наша гарантия";
+"zero_log_policy" = "Политика нулевых логов";
 "we_do_not_collect" = "Мы не собираем и не храним:";
 "full_privacy_policy" = "Полная политика конфиденциальности";
 "read_full_version" = "Ознакомиться с полной версией";
@@ -224,6 +230,7 @@
 "upload" = "Отдача";
 "mbps" = "Мбит/с";
 "france_paris" = "Франция — Париж";
+"us_new_york" = "США — Нью-Йорк";
 "ping_ms" = "Пинг: %d мс";
 "dns_settings_title" = "Настройки DNS";
 "network_tools_title" = "Сетевые инструменты";
@@ -296,6 +303,11 @@
 "help_search_placeholder" = "Поиск помощи...";
 "help_quick_actions" = "Быстрые действия";
 "help_categories" = "Категории";
+"help_category_connection" = "Подключение";
+"help_category_account" = "Аккаунт";
+"help_category_security" = "Безопасность";
+"help_category_technical" = "Технические";
+"help_category_billing" = "Оплата";
 "help_faq" = "Популярные вопросы";
 "help_contact" = "Связаться с поддержкой";
 "help_contact_desc" = "Если вы не нашли ответ на свой вопрос, наша команда поддержки готова помочь.";
@@ -413,6 +425,11 @@
 "encryption" = "Шифрование";
 "min_ios" = "Минимальная iOS";
 "acknowledgements" = "Благодарности";
+"ack_swiftui_desc" = "Современный UI фреймворк Apple";
+"ack_networkextension_desc" = "VPN и сетевые возможности";
+"ack_combine_desc" = "Реактивный фреймворк программирования";
+"ack_oslog_desc" = "Единая система логирования";
+"ack_nwpathmonitor_desc" = "Мониторинг доступности сети";
 "terms_of_service" = "Условия использования";
 "tos_1_title" = "Принятие условий";
 "tos_1_content" = "Используя приложение Jentacular VPN, вы соглашаетесь с настоящими условиями использования. Если вы не согласны с этими условиями, пожалуйста, не используйте приложение.";

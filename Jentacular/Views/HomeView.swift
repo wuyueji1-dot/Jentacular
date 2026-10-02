@@ -17,6 +17,7 @@ struct HomeView: View {
     @State private var showServerList = false
     @State private var buttonScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.0
+    @State private var flowRotation: Double = 0
 
     var body: some View {
         ZStack {
@@ -60,6 +61,12 @@ struct HomeView: View {
                 }
             .navigationBarHidden(true)
             .animation(.easeInOut(duration: 0.3), value: vpnService.connectionStatus)
+            .onAppear {
+                pingService.startAutoRefresh(host: AppConstants.vpnServerAddress, interval: 15.0)
+            }
+            .onDisappear {
+                pingService.stopAutoRefresh()
+            }
         }
         .sheet(isPresented: $showServerList) {
             NavigationView { ServersView() }
@@ -139,6 +146,53 @@ struct HomeView: View {
                     .onDisappear { pulseOpacity = 0.0 }
                 }
 
+                // Flowing light ring when connected
+                if vpnService.connectionStatus == .connected {
+                    Circle()
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [
+                                    Color.accentGreen.opacity(0.0),
+                                    Color.accentGreen.opacity(0.8),
+                                    Color.accentCyan.opacity(0.9),
+                                    Color.accentGreen.opacity(0.8),
+                                    Color.accentGreen.opacity(0.0)
+                                ]),
+                                center: .center
+                            ),
+                            lineWidth: 4
+                        )
+                        .frame(width: 185, height: 185)
+                        .rotationEffect(.degrees(flowRotation))
+                        .animation(
+                            Animation.linear(duration: 2.5).repeatForever(autoreverses: false),
+                            value: flowRotation
+                        )
+                        .onAppear { flowRotation = 360 }
+                        .onDisappear { }
+
+                    // Second slower flowing ring
+                    Circle()
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [
+                                    Color.accentCyan.opacity(0.0),
+                                    Color.accentCyan.opacity(0.5),
+                                    Color.accentGreen.opacity(0.6),
+                                    Color.accentCyan.opacity(0.0)
+                                ]),
+                                center: .center
+                            ),
+                            lineWidth: 2
+                        )
+                        .frame(width: 200, height: 200)
+                        .rotationEffect(.degrees(-flowRotation * 0.6))
+                        .animation(
+                            Animation.linear(duration: 4.0).repeatForever(autoreverses: false),
+                            value: flowRotation
+                        )
+                }
+
                 // Outer glow
                 Circle()
                     .fill(buttonColor.opacity(0.2))
@@ -169,15 +223,22 @@ struct HomeView: View {
                             .shadow(color: buttonColor.opacity(0.5), radius: 20, x: 0, y: 10)
 
                         VStack(spacing: 10) {
-                            Image(systemName: buttonIconName)
-                                .font(.system(size: 48, weight: .semibold))
-                                .foregroundColor(.white)
-                                .rotationEffect(.degrees(vpnService.connectionStatus == .connecting ? 360 : 0))
-                                .animation(
-                                    vpnService.connectionStatus == .connecting ?
-                                        Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default,
-                                    value: vpnService.connectionStatus
-                                )
+                            ZStack {
+                                Image(systemName: buttonIconName)
+                                    .font(.system(size: 48, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 60, height: 60)
+                                    .rotationEffect(
+                                        .degrees(vpnService.connectionStatus == .connecting ? 360 : 0),
+                                        anchor: .center
+                                    )
+                                    .animation(
+                                        vpnService.connectionStatus == .connecting ?
+                                            Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default,
+                                        value: vpnService.connectionStatus
+                                    )
+                            }
+                            .frame(width: 60, height: 60)
 
                             Text(buttonTitle)
                                 .font(.system(size: 15, weight: .bold))
@@ -275,34 +336,23 @@ struct HomeView: View {
                     .background(Color.dividerColor)
 
                 HStack {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .foregroundColor(.accentGreen)
+                    Image(systemName: "network")
+                        .foregroundColor(.accentPurple)
 
-                    Text(L("download"))
+                    Text(L("protocol"))
                         .font(.system(size: 15))
                         .foregroundColor(.secondaryText)
 
                     Spacer()
 
-                    Text(L("mbps"))
+                    Text("IKEv2")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primaryText)
                 }
-
-                HStack {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .foregroundColor(.accentBlue)
-
-                    Text(L("upload"))
-                        .font(.system(size: 15))
-                        .foregroundColor(.secondaryText)
-
-                    Spacer()
-
-                    Text(L("mbps"))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primaryText)
-                }
+            }
+            .padding(16)
+        }
+    }
             }
         }
     }
@@ -312,7 +362,7 @@ struct HomeView: View {
         Button(action: { showServerList = true }) {
             CustomCard {
                 HStack(spacing: 16) {
-                    Text("🇫🇷")
+                    Text("🇺🇸")
                         .font(.system(size: 32))
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -320,7 +370,7 @@ struct HomeView: View {
                             .font(.system(size: 13))
                             .foregroundColor(.tertiaryText)
 
-                        Text(L("france_paris"))
+                        Text(L("us_new_york"))
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.primaryText)
 

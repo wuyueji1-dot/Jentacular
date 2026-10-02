@@ -243,11 +243,11 @@ struct AcknowledgementsView: View {
                             .multilineTextAlignment(.center)
                             .padding(.top, 8)
 
-                        AcknowledgementItem(name: "SwiftUI", description: "Apple's modern UI framework")
-                        AcknowledgementItem(name: "NetworkExtension", description: "VPN and network capabilities")
-                        AcknowledgementItem(name: "Combine", description: "Reactive programming framework")
-                        AcknowledgementItem(name: "OSLog", description: "Unified logging system")
-                        AcknowledgementItem(name: "NWPathMonitor", description: "Network reachability monitoring")
+                        AcknowledgementItem(name: "SwiftUI", description: L("ack_swiftui_desc"))
+                        AcknowledgementItem(name: "NetworkExtension", description: L("ack_networkextension_desc"))
+                        AcknowledgementItem(name: "Combine", description: L("ack_combine_desc"))
+                        AcknowledgementItem(name: "OSLog", description: L("ack_oslog_desc"))
+                        AcknowledgementItem(name: "NWPathMonitor", description: L("ack_nwpathmonitor_desc"))
                     }
                     .padding(.horizontal, 20)
                 }

@@ -242,7 +242,7 @@ final class VPNConnectionService: ObservableObject {
         log("[installConfiguration] Step 2: buildIKEv2Protocol (with useExtendedAuthentication=true)...")
         let proto = buildIKEv2Protocol()
         manager.protocolConfiguration = proto
-        manager.localizedDescription = "Jentacular VPN"
+        manager.localizedDescription = "Jentacular vpn"
         manager.isEnabled = true
         manager.isOnDemandEnabled = false
         log("[installConfiguration] Step 2 OK: proto configured")
@@ -275,6 +275,12 @@ final class VPNConnectionService: ObservableObject {
 
     // MARK: - Connect
     func connect() async {
+        // Concurrency guard: prevent duplicate connection attempts
+        if isLoading {
+            log("[connect] SKIP: already connecting, ignore duplicate call")
+            return
+        }
+
         log("========================================")
         log("[connect] STARTING VPN CONNECTION")
         log("========================================")

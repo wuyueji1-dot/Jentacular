@@ -11,17 +11,18 @@ enum AppConstants {
     // App information
     static let appName = "Jentacular vpn"
     static let bundleIdentifier = "com.hitvpn.hitvpn2026"
-    static let appVersion = "1.0"
-    static let buildNumber = "1"
+    static let appVersion = "1.1"
+    static let buildNumber = "123"
 
-    // VPN configuration - Fixed France server
+    // VPN configuration - Fixed United States server
     static let vpnServerAddress = "ikev.gotou.top"
     static let vpnUsername = "iphone"
     static let vpnPassword = "J294urqXB327$"
-    static let vpnServerName = "France"
-    static let vpnServerCountry = "France"
-    static let vpnServerCountryCode = "FR"
-    static let vpnServerCity = "Paris"
+    static let vpnServerName = "United States"
+    static let vpnServerCountry = "United States"
+    static let vpnServerCountryCode = "US"
+    static let vpnServerCity = "New York"
+    static let vpnServerIP = "66.187.7.172"
     static let vpnProtocol = "IKEv2"
 
     // Privacy policy URL

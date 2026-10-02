@@ -20,7 +20,6 @@ struct JentacularApp: App {
     @StateObject private var cacheService = DataCacheService.shared
     @StateObject private var networkMonitor = NetworkMonitorService.shared
     @StateObject private var themeManager = ThemeManager.shared
-    @StateObject private var speedTestService = SpeedTestHistoryService.shared
     @StateObject private var networkToolsService = NetworkToolsService.shared
     @StateObject private var dnsSettingsService = DNSSettingsService.shared
 
@@ -46,39 +45,13 @@ struct JentacularApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
-                .id(languageRefresh)
-                .environmentObject(vpnService)
-                .environmentObject(securityService)
-                .environmentObject(analysisService)
-                .environmentObject(settingsService)
-                .environmentObject(historyService)
-                .environmentObject(localizationManager)
-                .environmentObject(pingService)
-                .environmentObject(cacheService)
-                .environmentObject(networkMonitor)
-                .environmentObject(themeManager)
-                .environmentObject(speedTestService)
-                .environmentObject(networkToolsService)
-                .environmentObject(dnsSettingsService)
-                .preferredColorScheme(.dark)
-                .onReceive(NotificationCenter.default.publisher(for: .appLanguageDidChange)) { _ in
-                    languageRefresh += 1
-                }
-                .onAppear {
-                    // Auto-connect if enabled and privacy consent already given
-                    let hasConsent = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent)
-                    let autoConnect = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.autoConnectEnabled)
-                    if hasConsent && autoConnect {
-                        Task {
-                            await VPNConnectionService.shared.connect()
-                        }
-                    }
-                }
-                .fullScreenCover(isPresented: $showPrivacyConsent) {
+            ZStack {
+                if showPrivacyConsent {
                     PrivacyConsentView {
                         UserDefaults.standard.set(true, forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent)
-                        showPrivacyConsent = false
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showPrivacyConsent = false
+                        }
                         // Auto-connect after consent if enabled
                         let autoConnect = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.autoConnectEnabled)
                         if autoConnect {
@@ -87,7 +60,41 @@ struct JentacularApp: App {
                             }
                         }
                     }
+                    .transition(.opacity)
+                    .zIndex(1)
+                } else {
+                    RootTabView()
+                        .id(languageRefresh)
+                        .environmentObject(vpnService)
+                        .environmentObject(securityService)
+                        .environmentObject(analysisService)
+                        .environmentObject(settingsService)
+                        .environmentObject(historyService)
+                        .environmentObject(localizationManager)
+                        .environmentObject(pingService)
+                        .environmentObject(cacheService)
+                        .environmentObject(networkMonitor)
+                        .environmentObject(themeManager)
+                        .environmentObject(networkToolsService)
+                        .environmentObject(dnsSettingsService)
+                        .preferredColorScheme(.dark)
+                        .onReceive(NotificationCenter.default.publisher(for: .appLanguageDidChange)) { _ in
+                            languageRefresh += 1
+                        }
+                        .onAppear {
+                            // Auto-connect if enabled and privacy consent already given
+                            let hasConsent = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent)
+                            let autoConnect = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.autoConnectEnabled)
+                            if hasConsent && autoConnect {
+                                Task {
+                                    await VPNConnectionService.shared.connect()
+                                }
+                            }
+                        }
+                        .transition(.opacity)
                 }
+            }
+            .animation(.easeInOut(duration: 0.3), value: showPrivacyConsent)
         }
     }
 

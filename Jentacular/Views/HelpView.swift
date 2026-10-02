@@ -23,6 +23,16 @@ struct HelpView: View {
 
         var id: String { rawValue }
 
+        var displayName: String {
+            switch self {
+            case .connection: return L("help_category_connection")
+            case .account: return L("help_category_account")
+            case .security: return L("help_category_security")
+            case .technical: return L("help_category_technical")
+            case .billing: return L("help_category_billing")
+            }
+        }
+
         var icon: String {
             switch self {
             case .connection: return "wifi"
@@ -149,7 +159,7 @@ struct HelpView: View {
                                 .background(category.color.opacity(0.15))
                                 .cornerRadius(12)
 
-                            Text(category.rawValue)
+                            Text(category.displayName)
                                 .font(.system(size: 16))
                                 .foregroundColor(.primaryText)
 

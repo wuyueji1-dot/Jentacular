@@ -14,20 +14,19 @@ struct ServersView: View {
     @EnvironmentObject var pingService: PingService
 
     // MARK: - State
-    @State private var isPinging = false
-    @State private var currentPing: Int? = nil
+    @State private var isButtonLoading = false
     @State private var showSortMenu = false
     @State private var selectedSort: ServerSortOption = .recommended
     @State private var searchText = ""
     @State private var selectedCountry = "all"
 
-    // MARK: - Single France Server
-    private let franceServer = VPNServerNode(
-        id: "france-paris-01",
-        name: "France",
-        country: "France",
-        countryCode: "FR",
-        city: "Paris",
+    // MARK: - Single United States Server
+    private let usServer = VPNServerNode(
+        id: "us-newyork-01",
+        name: "United States",
+        country: "United States",
+        countryCode: "US",
+        city: "New York",
         ipAddress: AppConstants.vpnServerAddress,
         pingMs: 0,
         loadPercent: 30,
@@ -51,20 +50,26 @@ struct ServersView: View {
                 // Server list
                 ScrollView {
                     VStack(spacing: 12) {
-                        // France server card with real ping
-                        FranceServerCard(
-                            server: franceServer,
-                            ping: currentPing,
-                            isPinging: isPinging,
+                        // US server card with shared ping from PingService
+                        USServerCard(
+                            server: usServer,
+                            ping: pingService.lastPingMs,
+                            isPinging: pingService.isPinging,
                             isConnected: vpnService.connectionStatus == .connected,
+                            isButtonLoading: isButtonLoading,
                             onRefreshPing: {
                                 Task {
-                                    await measurePing()
+                                    await pingService.ping(host: AppConstants.vpnServerAddress)
                                 }
                             },
                             onConnect: {
+                                // Haptic feedback
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                isButtonLoading = true
                                 Task {
                                     await vpnService.toggleConnection()
+                                    await MainActor.run { isButtonLoading = false }
                                 }
                             }
                         )
@@ -80,11 +85,6 @@ struct ServersView: View {
         }
         .navigationBarTitle(L("servers_title"), displayMode: .inline)
         .navigationBarItems(leading: backButton)
-        .onAppear {
-            Task {
-                await measurePing()
-            }
-        }
     }
 
     // MARK: - Back Button
@@ -98,13 +98,6 @@ struct ServersView: View {
             }
             .foregroundColor(.accentCyan)
         }
-    }
-
-    // MARK: - Measure Ping
-    private func measurePing() async {
-        isPinging = true
-        currentPing = await pingService.ping(host: AppConstants.vpnServerAddress)
-        isPinging = false
     }
 
     // MARK: - Header Section
@@ -183,8 +176,8 @@ struct ServersView: View {
                     CountryChip(title: L("all"), isSelected: selectedCountry == "all") {
                         selectedCountry = "all"
                     }
-                    CountryChip(title: "France", isSelected: selectedCountry == "france") {
-                        selectedCountry = "france"
+                    CountryChip(title: "United States", isSelected: selectedCountry == "us") {
+                        selectedCountry = "us"
                     }
                 }
                 .padding(.horizontal, 20)
@@ -201,22 +194,23 @@ struct ServersView: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.primaryText)
 
-                InfoRow(label: L("address"), value: AppConstants.vpnServerAddress)
+                InfoRow(label: L("address"), value: L("us_new_york"))
                 InfoRow(label: L("protocol"), value: "IKEv2")
                 InfoRow(label: L("encryption"), value: "AES-256-GCM")
-                InfoRow(label: L("location"), value: "Paris, France")
+                InfoRow(label: L("location"), value: "New York, United States")
                 InfoRow(label: L("load"), value: "30%")
             }
         }
     }
 }
 
-// MARK: - France Server Card
-struct FranceServerCard: View {
+// MARK: - US Server Card
+struct USServerCard: View {
     let server: VPNServerNode
     let ping: Int?
     let isPinging: Bool
     let isConnected: Bool
+    let isButtonLoading: Bool
     let onRefreshPing: () -> Void
     let onConnect: () -> Void
 
@@ -287,13 +281,19 @@ struct FranceServerCard: View {
             }
             .padding(20)
 
-            // Connect button
+            // Connect button with loading feedback
             Button(action: onConnect) {
                 HStack {
-                    Image(systemName: isConnected ? "power" : "bolt.fill")
-                        .font(.system(size: 18, weight: .semibold))
+                    if isButtonLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.9)
+                    } else {
+                        Image(systemName: isConnected ? "power" : "bolt.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
 
-                    Text(isConnected ? L("disconnect").uppercased() : L("connect"))
+                    Text(isButtonLoading ? L("connecting") : (isConnected ? L("disconnect").uppercased() : L("connect")))
                         .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundColor(.white)
@@ -307,7 +307,9 @@ struct FranceServerCard: View {
                     )
                 )
                 .cornerRadius(14)
+                .opacity(isButtonLoading ? 0.7 : 1.0)
             }
+            .disabled(isButtonLoading)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }

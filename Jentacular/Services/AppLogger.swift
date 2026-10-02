@@ -94,6 +94,13 @@ final class AppLogger {
         logDirectory = paths[0].appendingPathComponent("Logs", isDirectory: true)
         logFileURL = logDirectory.appendingPathComponent("jentacular.log")
         try? fileManager.createDirectory(at: logDirectory, withIntermediateDirectories: true)
+
+        // Release builds only log info and above to minimize disk usage and privacy exposure
+        #if DEBUG
+        minimumLevel = .debug
+        #else
+        minimumLevel = .info
+        #endif
     }
 
     // MARK: - Public Logging Methods

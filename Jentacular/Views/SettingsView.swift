@@ -19,10 +19,8 @@ struct SettingsView: View {
     @State private var showAbout = false
     @State private var showHelp = false
     @State private var showNetworkTools = false
-    @State private var showSpeedTestHistory = false
     @State private var showDNSSettings = false
     @State private var showPrivacyPolicy = false
-    @State private var showVPNDiagnostic = false
 
     var body: some View {
         ZStack {
@@ -72,17 +70,11 @@ struct SettingsView: View {
         .sheet(isPresented: $showNetworkTools) {
             NavigationView { NetworkToolsView() }
         }
-        .sheet(isPresented: $showSpeedTestHistory) {
-            NavigationView { SpeedTestHistoryView() }
-        }
         .sheet(isPresented: $showDNSSettings) {
             NavigationView { DNSSettingsView() }
         }
         .sheet(isPresented: $showPrivacyPolicy) {
             NavigationView { PrivacyPolicyView() }
-        }
-        .sheet(isPresented: $showVPNDiagnostic) {
-            NavigationView { VPNDiagnosticView().environmentObject(VPNConnectionService.shared) }
         }
     }
 
@@ -238,38 +230,12 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
 
                 NavigationRow(
-                    iconName: "wrench.and.screwdriver.fill",
-                    iconColor: .accentPurple,
-                    title: "VPN Diagnostic",
-                    value: nil
-                ) {
-                    showVPNDiagnostic = true
-                }
-
-                Divider()
-                    .background(Color.dividerColor)
-                    .padding(.vertical, 8)
-
-                NavigationRow(
                     iconName: "wifi",
                     iconColor: .accentCyan,
                     title: L("network_tools"),
                     value: nil
                 ) {
                     showNetworkTools = true
-                }
-
-                Divider()
-                    .background(Color.dividerColor)
-                    .padding(.vertical, 8)
-
-                NavigationRow(
-                    iconName: "chart.bar.fill",
-                    iconColor: .accentGreen,
-                    title: L("speed_history"),
-                    value: nil
-                ) {
-                    showSpeedTestHistory = true
                 }
 
                 Divider()

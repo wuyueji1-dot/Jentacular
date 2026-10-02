@@ -150,6 +150,11 @@
 // Help
 "help_quick_actions" = "Quick Actions";
 "help_categories" = "Categories";
+"help_category_connection" = "Connection";
+"help_category_account" = "Account";
+"help_category_security" = "Security";
+"help_category_technical" = "Technical";
+"help_category_billing" = "Billing";
 "help_faq" = "Popular Questions";
 "help_contact" = "Contact Support";
 "help_contact_desc" = "If you haven't found an answer to your question, our support team is ready to help.";
@@ -163,6 +168,7 @@
 "our_principles" = "Our Principles";
 "data_collected" = "What Data We Collect";
 "our_guarantee" = "Our Guarantee";
+"zero_log_policy" = "Zero-Log Policy";
 "we_do_not_collect" = "We do not collect or store:";
 "full_privacy_policy" = "Full Privacy Policy";
 "read_full_version" = "Read Full Version";
@@ -224,6 +230,7 @@
 "upload" = "Upload";
 "mbps" = "Mbps";
 "france_paris" = "France — Paris";
+"us_new_york" = "United States — New York";
 "ping_ms" = "Ping: %d ms";
 "dns_settings_title" = "DNS Settings";
 "network_tools_title" = "Network Tools";
@@ -296,6 +303,11 @@
 "help_search_placeholder" = "Search help...";
 "help_quick_actions" = "Quick Actions";
 "help_categories" = "Categories";
+"help_category_connection" = "Connection";
+"help_category_account" = "Account";
+"help_category_security" = "Security";
+"help_category_technical" = "Technical";
+"help_category_billing" = "Billing";
 "help_faq" = "Popular Questions";
 "help_contact" = "Contact Support";
 "help_contact_desc" = "If you haven't found an answer to your question, our support team is ready to help.";
@@ -413,6 +425,11 @@
 "encryption" = "Encryption";
 "min_ios" = "Minimum iOS";
 "acknowledgements" = "Acknowledgements";
+"ack_swiftui_desc" = "Apple's modern UI framework";
+"ack_networkextension_desc" = "VPN and network capabilities";
+"ack_combine_desc" = "Reactive programming framework";
+"ack_oslog_desc" = "Unified logging system";
+"ack_nwpathmonitor_desc" = "Network reachability monitoring";
 "terms_of_service" = "Terms of Service";
 "tos_1_title" = "Acceptance of Terms";
 "tos_1_content" = "By using the Jentacular VPN app, you agree to these terms of service. If you do not agree with these terms, please do not use the app.";

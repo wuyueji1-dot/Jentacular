@@ -12,7 +12,6 @@ struct PrivacyConsentView: View {
 
     // MARK: - State
     @State private var animateIcon = false
-    @State private var showContent = false
     @State private var showPrivacyPolicy = false
 
     var body: some View {
@@ -51,22 +50,20 @@ struct PrivacyConsentView: View {
                 // Scrollable content
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 20) {
-                        if showContent {
-                            // Welcome message
-                            welcomeSection
+                        // Welcome message
+                        welcomeSection
 
-                            // Privacy principles
-                            privacyPrinciplesSection
+                        // Privacy principles
+                        privacyPrinciplesSection
 
-                            // Data collection details
-                            dataCollectionSection
+                        // Data collection details
+                        dataCollectionSection
 
-                            // No-logs guarantee
-                            noLogsGuaranteeSection
+                        // No-logs guarantee
+                        noLogsGuaranteeSection
 
-                            // Full policy link
-                            fullPolicySection
-                        }
+                        // Full policy link
+                        fullPolicySection
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 30)
@@ -79,11 +76,6 @@ struct PrivacyConsentView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.8)) {
                 animateIcon = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                withAnimation(.easeOut(duration: 0.6)) {
-                    showContent = true
-                }
             }
         }
         .sheet(isPresented: $showPrivacyPolicy) {
@@ -137,13 +129,11 @@ struct PrivacyConsentView: View {
             Text(L("privacy"))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.primaryText)
-                .opacity(showContent ? 1 : 0)
 
             // Subtitle
             Text(L("privacy_subtitle"))
                 .font(.system(size: 15))
                 .foregroundColor(.secondaryText)
-                .opacity(showContent ? 1 : 0)
         }
         .padding(.bottom, 20)
     }
@@ -225,21 +215,36 @@ struct PrivacyConsentView: View {
 
     // MARK: - No Logs Guarantee
     private var noLogsGuaranteeSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header with icon and title
             HStack(spacing: 10) {
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.accentGreen)
-                Text(L("our_guarantee"))
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.accentGreen)
+                ZStack {
+                    Circle()
+                        .fill(Color.accentGreen.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.accentGreen)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("our_guarantee"))
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.accentGreen)
+                    Text(L("zero_log_policy"))
+                        .font(.system(size: 12))
+                        .foregroundColor(.tertiaryText)
+                }
             }
 
-            Text(L("we_do_not_collect"))
-                .font(.system(size: 15))
-                .foregroundColor(.secondaryText)
+            Divider()
+                .background(Color.accentGreen.opacity(0.2))
 
-            VStack(alignment: .leading, spacing: 8) {
+            Text(L("we_do_not_collect"))
+                .font(.system(size: 14))
+                .foregroundColor(.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 10) {
                 GuaranteeCheckmarkItem(text: L("guarantee_browsing_history"))
                 GuaranteeCheckmarkItem(text: L("guarantee_traffic_content"))
                 GuaranteeCheckmarkItem(text: L("guarantee_dns_queries"))
@@ -247,12 +252,18 @@ struct PrivacyConsentView: View {
                 GuaranteeCheckmarkItem(text: L("guarantee_connection_logs"))
             }
         }
-        .padding(16)
-        .background(Color.accentGreen.opacity(0.08))
-        .cornerRadius(16)
+        .padding(20)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.accentGreen.opacity(0.1), Color.accentGreen.opacity(0.04)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(18)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.accentGreen.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.accentGreen.opacity(0.25), lineWidth: 1)
         )
     }
 

@@ -2,7 +2,7 @@
 //  PingService.swift
 //  Jentacular
 //
-//  Real-time server latency measurement using TCP handshake with multiple samples
+//  Real-time server latency measurement using TCP handshake
 //
 
 import Foundation
@@ -15,10 +15,36 @@ final class PingService: ObservableObject {
     @Published private(set) var isPinging = false
     @Published private(set) var lastPingMs: Int?
 
+    private var autoRefreshTimer: Timer?
+    private var currentHost: String?
+
     private init() {}
 
-    // MARK: - Ping Host
-    func ping(host: String, timeout: TimeInterval = 8.0) async -> Int? {
+    // MARK: - Auto Refresh
+    func startAutoRefresh(host: String, interval: TimeInterval = 15.0) {
+        stopAutoRefresh()
+        currentHost = host
+        // Initial ping immediately
+        Task { await ping(host: host) }
+        autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            guard let self = self, let host = self.currentHost else { return }
+            Task { await self.ping(host: host) }
+        }
+    }
+
+    func stopAutoRefresh() {
+        autoRefreshTimer?.invalidate()
+        autoRefreshTimer = nil
+        currentHost = nil
+    }
+
+    // MARK: - Ping Host (single TCP connection to port 443)
+    func ping(host: String, timeout: TimeInterval = 3.0) async -> Int? {
+        // Skip if already pinging to avoid duplicate measurements
+        if isPinging {
+            return lastPingMs
+        }
+
         await MainActor.run { isPinging = true }
         defer {
             Task { @MainActor in
@@ -26,42 +52,14 @@ final class PingService: ObservableObject {
             }
         }
 
-        // Take 3 samples and use median for stability
-        var samples: [Int] = []
-        for i in 0..<3 {
-            // Small delay between samples
-            if i > 0 {
-                try? await Task.sleep(nanoseconds: 300_000_000)
-            }
-
-            // Try HTTP HEAD request first (most accurate real-world latency)
-            if let result = await httpPing(host: host, timeout: timeout) {
-                samples.append(result)
-                continue
-            }
-
-            // Fallback: TCP connection to port 443, then 80
-            if let result = await tcpPing(host: host, port: 443, timeout: timeout) {
-                samples.append(result)
-                continue
-            }
-
-            if let result = await tcpPing(host: host, port: 80, timeout: timeout) {
-                samples.append(result)
-                continue
-            }
+        // Single TCP connection to port 443 - this is the real TCP RTT
+        if let result = await tcpPing(host: host, port: 443, timeout: timeout) {
+            await MainActor.run { self.lastPingMs = result }
+            return result
         }
 
-        // If we have samples, use median
-        if !samples.isEmpty {
-            let sorted = samples.sorted()
-            let median = sorted[sorted.count / 2]
-            await MainActor.run { self.lastPingMs = median }
-            return median
-        }
-
-        // Fallback: DNS resolution time as approximate latency
-        if let result = await dnsPing(host: host) {
+        // Fallback: TCP port 80
+        if let result = await tcpPing(host: host, port: 80, timeout: timeout) {
             await MainActor.run { self.lastPingMs = result }
             return result
         }
@@ -69,30 +67,7 @@ final class PingService: ObservableObject {
         return nil
     }
 
-    // MARK: - HTTP Ping (most accurate real-world latency)
-    private func httpPing(host: String, timeout: TimeInterval) async -> Int? {
-        guard let url = URL(string: "https://\(host)/") else { return nil }
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
-        request.timeoutInterval = timeout
-        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-
-        let startTime = Date()
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            let elapsed = Date().timeIntervalSince(startTime) * 1000
-            let pingMs = Int(elapsed.rounded())
-            // HTTP HEAD includes full TLS handshake + server response, realistic latency
-            if pingMs >= 20 {
-                return pingMs
-            }
-            return nil
-        } catch {
-            return nil
-        }
-    }
-
-    // MARK: - TCP Ping
+    // MARK: - TCP Ping (single connection, no filtering)
     private func tcpPing(host: String, port: UInt16, timeout: TimeInterval) async -> Int? {
         let startTime = Date()
         let connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!, using: .tcp)
@@ -108,12 +83,8 @@ final class PingService: ObservableObject {
                     connection.cancel()
                     if !didResume {
                         didResume = true
-                        // Sanity check: discard unrealistic values (< 50ms likely local/CDN cache)
-                        if pingMs >= 50 {
-                            continuation.resume(returning: pingMs)
-                        } else {
-                            continuation.resume(returning: nil)
-                        }
+                        // Return real value, no minimum threshold filtering
+                        continuation.resume(returning: max(1, pingMs))
                     }
                 case .failed:
                     connection.cancel()
@@ -136,28 +107,6 @@ final class PingService: ObservableObject {
             }
 
             connection.start(queue: .global())
-        }
-    }
-
-    // MARK: - DNS Ping (fallback)
-    private func dnsPing(host: String) async -> Int? {
-        let startTime = Date()
-
-        return await withCheckedContinuation { continuation in
-            var hints = addrinfo()
-            hints.ai_family = AF_INET
-            hints.ai_socktype = SOCK_STREAM
-
-            var result: UnsafeMutablePointer<addrinfo>?
-            let status = getaddrinfo(host, nil, &hints, &result)
-
-            if status == 0 {
-                freeaddrinfo(result)
-                let elapsed = Date().timeIntervalSince(startTime) * 1000
-                continuation.resume(returning: Int(elapsed.rounded()))
-            } else {
-                continuation.resume(returning: nil)
-            }
         }
     }
 

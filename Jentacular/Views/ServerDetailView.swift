@@ -83,7 +83,7 @@ struct ServerDetailView: View {
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.primaryText)
 
-                    Text(AppConstants.vpnServerAddress)
+                    Text(L("france_paris"))
                         .font(.system(size: 14))
                         .foregroundColor(.secondaryText)
 
