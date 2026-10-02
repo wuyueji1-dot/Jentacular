@@ -107,7 +107,8 @@ jobs:
           take_screenshot 0 "01_Home"
           take_screenshot 1 "02_Shield"
           take_screenshot 2 "03_Servers"
-          take_screenshot 4 "04_Settings"
+          take_screenshot 3 "04_Analysis"
+          take_screenshot 4 "05_Settings"
 
           echo "=== All screenshots ==="
           ls -la screenshots/
