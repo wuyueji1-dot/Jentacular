@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showAbout = false
     @State private var showHelp = false
     @State private var showNetworkTools = false
+    @State private var showConnectionHistory = false
     @State private var showDNSSettings = false
     @State private var showPrivacyPolicy = false
 
@@ -69,6 +70,9 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showNetworkTools) {
             NavigationView { NetworkToolsView() }
+        }
+        .sheet(isPresented: $showConnectionHistory) {
+            NavigationView { ConnectionHistoryView() }
         }
         .sheet(isPresented: $showDNSSettings) {
             NavigationView { DNSSettingsView() }
@@ -236,6 +240,19 @@ struct SettingsView: View {
                     value: nil
                 ) {
                     showNetworkTools = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "chart.bar.fill",
+                    iconColor: .accentGreen,
+                    title: "Connection History",
+                    value: nil
+                ) {
+                    showConnectionHistory = true
                 }
 
                 Divider()
