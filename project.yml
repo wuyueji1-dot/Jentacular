@@ -11,7 +11,7 @@ settings:
     TARGETED_DEVICE_FAMILY: "1,2"
     ONLY_ACTIVE_ARCH: YES
     MARKETING_VERSION: "1.1"
-    CURRENT_PROJECT_VERSION: "124"
+    CURRENT_PROJECT_VERSION: "125"
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: S47SL2JFSQ
     CODE_SIGN_IDENTITY: "Apple Distribution"
@@ -38,7 +38,7 @@ targets:
       properties:
         CFBundleDisplayName: Jentacular vpn
         CFBundleShortVersionString: "1.1"
-        CFBundleVersion: "124"
+        CFBundleVersion: "125"
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities: [armv7]
