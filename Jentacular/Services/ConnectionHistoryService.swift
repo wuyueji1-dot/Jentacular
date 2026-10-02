@@ -63,7 +63,7 @@ final class ConnectionHistoryService: ObservableObject {
     // MARK: - Session Tracking
     func startSession(serverName: String, serverCountry: String) {
         currentSessionStart = Date()
-        AppLogger.shared.info(.connection, "Connection session started: \(serverName)")
+        AppLogger.shared.info(.vpn, "Connection session started: \(serverName)")
     }
 
     func endSession(serverName: String, serverCountry: String, successful: Bool, avgPing: Int? = nil) {
@@ -87,7 +87,7 @@ final class ConnectionHistoryService: ObservableObject {
         }
         saveRecords()
         currentSessionStart = nil
-        AppLogger.shared.info(.connection, "Connection session ended: \(record.formattedDuration), success=\(successful)")
+        AppLogger.shared.info(.vpn, "Connection session ended: \(record.formattedDuration), success=\(successful)")
     }
 
     // MARK: - Statistics
@@ -139,7 +139,7 @@ final class ConnectionHistoryService: ObservableObject {
             let data = try JSONEncoder().encode(records)
             UserDefaults.standard.set(data, forKey: storageKey)
         } catch {
-            AppLogger.shared.error(.connection, "Failed to save connection history: \(error)")
+            AppLogger.shared.error(.vpn, "Failed to save connection history: \(error)")
         }
     }
 
@@ -148,7 +148,7 @@ final class ConnectionHistoryService: ObservableObject {
         do {
             records = try JSONDecoder().decode([ConnectionHistoryRecord].self, from: data)
         } catch {
-            AppLogger.shared.error(.connection, "Failed to load connection history: \(error)")
+            AppLogger.shared.error(.vpn, "Failed to load connection history: \(error)")
         }
     }
 
