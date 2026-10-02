@@ -81,9 +81,25 @@ final class VPNConnectionService: ObservableObject {
 
         switch connection.status {
         case .invalid:
+            if connectionStatus == .connected {
+                ConnectionHistoryService.shared.endSession(
+                    serverName: AppConstants.vpnServerName,
+                    serverCountry: AppConstants.vpnServerCountry,
+                    successful: true,
+                    avgPing: PingService.shared.lastPingMs
+                )
+            }
             connectionStatus = .disconnected
             stopDurationTimer()
         case .disconnected:
+            if connectionStatus == .connected {
+                ConnectionHistoryService.shared.endSession(
+                    serverName: AppConstants.vpnServerName,
+                    serverCountry: AppConstants.vpnServerCountry,
+                    successful: true,
+                    avgPing: PingService.shared.lastPingMs
+                )
+            }
             connectionStatus = .disconnected
             stopDurationTimer()
         case .connecting:
@@ -93,6 +109,10 @@ final class VPNConnectionService: ObservableObject {
             connectionStatus = .connected
             startDurationTimer()
             connectionStartDate = Date()
+            ConnectionHistoryService.shared.startSession(
+                serverName: AppConstants.vpnServerName,
+                serverCountry: AppConstants.vpnServerCountry
+            )
         case .reasserting:
             connectionStatus = .connecting
         case .disconnecting:
