@@ -11,7 +11,7 @@ env:
   APP_NAME: Jentacular
   BUNDLE_ID: com.hitvpn.hitvpn2026
   VERSION: "1.1"
-  BUILD: "129"
+  BUILD: "130"
 
 jobs:
   build:
