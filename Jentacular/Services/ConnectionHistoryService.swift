@@ -88,8 +88,7 @@ final class ConnectionHistoryService: ObservableObject {
 
     private func loadHistory() {
         guard let data = defaults.data(forKey: AppConstants.UserDefaultsKeys.connectionHistory) else {
-            // Load sample data for demonstration
-            history = sampleHistory()
+            history = []
             return
         }
 
@@ -97,39 +96,8 @@ final class ConnectionHistoryService: ObservableObject {
             history = try JSONDecoder().decode([ConnectionHistoryEntry].self, from: data)
         } catch {
             print("Failed to load connection history: \(error)")
-            history = sampleHistory()
+            history = []
         }
-    }
-
-    // MARK: - Sample Data
-    private func sampleHistory() -> [ConnectionHistoryEntry] {
-        let now = Date()
-        return [
-            ConnectionHistoryEntry(
-                id: UUID(),
-                serverName: AppConstants.vpnServerName,
-                countryCode: AppConstants.vpnServerCountryCode,
-                date: now.addingTimeInterval(-3600),
-                duration: 1800,
-                networkType: .wifi
-            ),
-            ConnectionHistoryEntry(
-                id: UUID(),
-                serverName: AppConstants.vpnServerName,
-                countryCode: AppConstants.vpnServerCountryCode,
-                date: now.addingTimeInterval(-86400),
-                duration: 3600,
-                networkType: .wifi
-            ),
-            ConnectionHistoryEntry(
-                id: UUID(),
-                serverName: AppConstants.vpnServerName,
-                countryCode: AppConstants.vpnServerCountryCode,
-                date: now.addingTimeInterval(-172800),
-                duration: 540,
-                networkType: .cellular
-            )
-        ]
     }
 
     // MARK: - Clear History
@@ -151,9 +119,9 @@ final class ConnectionHistoryService: ObservableObject {
         let hours = Int(totalDuration) / 3600
         let minutes = Int(totalDuration) / 60 % 60
         if hours > 0 {
-            return "\(hours)ч \(minutes)м"
+            return String(format: L("hours_minutes_short"), hours, minutes)
         } else {
-            return "\(minutes)м"
+            return String(format: L("minutes_short"), minutes)
         }
     }
 }

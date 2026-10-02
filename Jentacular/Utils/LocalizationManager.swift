@@ -7,6 +7,11 @@
 
 import Foundation
 
+// Notification posted when language changes
+extension Notification.Name {
+    static let appLanguageDidChange = Notification.Name("AppLanguageDidChange")
+}
+
 enum AppLanguage: String, CaseIterable, Identifiable {
     case system = "system"
     case english = "en"
@@ -16,9 +21,9 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .system: return "Системный"
+        case .system: return L("lang_system")
         case .english: return "English"
-        case .russian: return "Русский"
+        case .russian: return L("lang_russian")
         }
     }
 
@@ -34,22 +39,65 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 final class LocalizationManager: ObservableObject {
     static let shared = LocalizationManager()
 
-    @Published private(set) var currentLanguage: AppLanguage = .system
+    @Published private(set) var currentLanguage: AppLanguage = .english
 
     private init() {
         loadSavedLanguage()
+        applyLanguageToSystem()
     }
 
     private func loadSavedLanguage() {
-        if let saved = UserDefaults.standard.string(forKey: AppConstants.UserDefaultsKeys.selectedLanguage),
+        let defaults = UserDefaults.standard
+
+        // Check if we need to re-detect language (version migration)
+        let languageVersion = defaults.integer(forKey: "jentacular_language_version")
+        let shouldRedetect = languageVersion < 2
+
+        if !shouldRedetect,
+           let saved = defaults.string(forKey: AppConstants.UserDefaultsKeys.selectedLanguage),
            let language = AppLanguage(rawValue: saved) {
             currentLanguage = language
+            return
         }
+
+        // First launch or migration: detect system language and region
+        let systemLang = Locale.preferredLanguages.first ?? "en"
+        let regionCode = Locale.current.regionCode ?? ""
+
+        // Use Russian if language is Russian OR region is Russia/Belarus/Kazakhstan/Ukraine
+        let isRussianLanguage = systemLang.hasPrefix("ru")
+        let isRussianRegion = ["RU", "BY", "KZ", "UA"].contains(regionCode.uppercased())
+
+        if isRussianLanguage || isRussianRegion {
+            currentLanguage = .russian
+        } else {
+            currentLanguage = .english
+        }
+
+        // Save the detected language
+        defaults.set(currentLanguage.rawValue, forKey: AppConstants.UserDefaultsKeys.selectedLanguage)
+        defaults.set(2, forKey: "jentacular_language_version")
+    }
+
+    private func applyLanguageToSystem() {
+        let defaults = UserDefaults.standard
+        if let localeId = currentLanguage.localeIdentifier {
+            defaults.set([localeId], forKey: "AppleLanguages")
+        } else {
+            defaults.removeObject(forKey: "AppleLanguages")
+        }
+        defaults.synchronize()
     }
 
     func setLanguage(_ language: AppLanguage) {
         currentLanguage = language
         UserDefaults.standard.set(language.rawValue, forKey: AppConstants.UserDefaultsKeys.selectedLanguage)
+        applyLanguageToSystem()
+
+        // Notify all views to refresh
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .appLanguageDidChange, object: nil)
+        }
     }
 
     func localizedString(for key: String) -> String {
@@ -63,6 +111,12 @@ final class LocalizationManager: ObservableObject {
         }
         return NSLocalizedString(key, comment: "")
     }
+}
+
+// MARK: - Global Localization Helper
+/// Shortcut for localized string lookup that respects in-app language setting
+func L(_ key: String) -> String {
+    return LocalizationManager.shared.localizedString(for: key)
 }
 
 // MARK: - Localized String Keys

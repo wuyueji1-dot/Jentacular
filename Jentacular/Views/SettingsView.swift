@@ -16,54 +16,79 @@ struct SettingsView: View {
     @State private var showConnectionHistory = false
     @State private var showPrivacyCenter = false
     @State private var showLanguageSelection = false
+    @State private var showAbout = false
+    @State private var showHelp = false
+    @State private var showNetworkTools = false
+    @State private var showSpeedTestHistory = false
+    @State private var showDNSSettings = false
+    @State private var showPrivacyPolicy = false
+    @State private var showVPNDiagnostic = false
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Header
-                        headerSection
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Header
+                    headerSection
 
-                        // Language section
-                        languageSection
+                    // Language section
+                    languageSection
 
-                        // VPN section
-                        vpnSection
+                    // VPN section
+                    vpnSection
 
-                        // Notifications section
-                        notificationsSection
+                    // Notifications section
+                    notificationsSection
 
-                        // More section
-                        moreSection
+                    // More section
+                    moreSection
 
-                        // App info
-                        appInfoSection
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 40)
+                    // App info
+                    appInfoSection
                 }
-            }
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showConnectionHistory) {
-                ConnectionHistoryView()
-            }
-            .sheet(isPresented: $showPrivacyCenter) {
-                PrivacyCenterView()
-            }
-            .sheet(isPresented: $showLanguageSelection) {
-                LanguageSelectionView()
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showConnectionHistory) {
+            NavigationView { ConnectionHistoryView() }
+        }
+        .sheet(isPresented: $showPrivacyCenter) {
+            NavigationView { PrivacyCenterView() }
+        }
+        .sheet(isPresented: $showLanguageSelection) {
+            NavigationView { LanguageSelectionView() }
+        }
+        .sheet(isPresented: $showAbout) {
+            NavigationView { AboutView() }
+        }
+        .sheet(isPresented: $showHelp) {
+            NavigationView { HelpView() }
+        }
+        .sheet(isPresented: $showNetworkTools) {
+            NavigationView { NetworkToolsView() }
+        }
+        .sheet(isPresented: $showSpeedTestHistory) {
+            NavigationView { SpeedTestHistoryView() }
+        }
+        .sheet(isPresented: $showDNSSettings) {
+            NavigationView { DNSSettingsView() }
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            NavigationView { PrivacyPolicyView() }
+        }
+        .sheet(isPresented: $showVPNDiagnostic) {
+            NavigationView { VPNDiagnosticView().environmentObject(VPNConnectionService.shared) }
+        }
     }
 
     // MARK: - Header Section
     private var headerSection: some View {
-        Text("Настройки")
+        Text(L("settings_title"))
             .font(.system(size: 32, weight: .bold))
             .foregroundColor(.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,7 +98,7 @@ struct SettingsView: View {
     private var languageSection: some View {
         CustomCard {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "Язык")
+                SectionHeader(title: L("language"))
 
                 ForEach(AppLanguage.allCases) { language in
                     Button(action: {
@@ -112,24 +137,11 @@ struct SettingsView: View {
                 SectionHeader(title: "VPN")
 
                 ToggleRow(
-                    title: "Автоподключение",
-                    description: "Автоматически подключаться в доверенных сетях",
+                    title: L("auto_connect"),
+                    description: L("auto_connect_desc"),
                     isOn: Binding(
                         get: { settingsService.autoConnectEnabled },
                         set: { settingsService.setAutoConnect($0) }
-                    )
-                )
-
-                Divider()
-                    .background(Color.dividerColor)
-                    .padding(.vertical, 8)
-
-                ToggleRow(
-                    title: "Только Wi-Fi",
-                    description: "Отключать VPN в сотовых сетях",
-                    isOn: Binding(
-                        get: { settingsService.wifiOnlyEnabled },
-                        set: { settingsService.setWifiOnly($0) }
                     )
                 )
             }
@@ -140,11 +152,11 @@ struct SettingsView: View {
     private var notificationsSection: some View {
         CustomCard {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "Уведомления")
+                SectionHeader(title: L("notifications"))
 
                 ToggleRow(
-                    title: "Включить уведомления",
-                    description: "Оповещения об изменении статуса подключения",
+                    title: L("enable_notifications"),
+                    description: L("enable_notifications_desc"),
                     isOn: Binding(
                         get: { settingsService.notificationsEnabled },
                         set: { settingsService.setNotifications($0) }
@@ -158,12 +170,12 @@ struct SettingsView: View {
     private var moreSection: some View {
         CustomCard {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "Ещё")
+                SectionHeader(title: L("more"))
 
                 NavigationRow(
                     iconName: "clock.arrow.circlepath",
                     iconColor: .accentBlue,
-                    title: "История подключений",
+                    title: L("connection_history"),
                     value: "\(historyService.totalConnections)"
                 ) {
                     showConnectionHistory = true
@@ -176,7 +188,7 @@ struct SettingsView: View {
                 NavigationRow(
                     iconName: "hand.raised.fill",
                     iconColor: .accentPurple,
-                    title: "Центр конфиденциальности",
+                    title: L("privacy_center"),
                     value: nil
                 ) {
                     showPrivacyCenter = true
@@ -189,12 +201,88 @@ struct SettingsView: View {
                 NavigationRow(
                     iconName: "doc.text.fill",
                     iconColor: .accentCyan,
-                    title: "Политика конфиденциальности",
+                    title: L("privacy_policy"),
                     value: nil
                 ) {
-                    if let url = URL(string: AppConstants.privacyPolicyURL) {
-                        UIApplication.shared.open(url)
-                    }
+                    showPrivacyPolicy = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "questionmark.circle.fill",
+                    iconColor: .accentGold,
+                    title: L("help_support"),
+                    value: nil
+                ) {
+                    showHelp = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "info.circle.fill",
+                    iconColor: .accentBlue,
+                    title: L("about"),
+                    value: AppConstants.appVersion
+                ) {
+                    showAbout = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "wrench.and.screwdriver.fill",
+                    iconColor: .accentPurple,
+                    title: "VPN Diagnostic",
+                    value: nil
+                ) {
+                    showVPNDiagnostic = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "wifi",
+                    iconColor: .accentCyan,
+                    title: L("network_tools"),
+                    value: nil
+                ) {
+                    showNetworkTools = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "chart.bar.fill",
+                    iconColor: .accentGreen,
+                    title: L("speed_history"),
+                    value: nil
+                ) {
+                    showSpeedTestHistory = true
+                }
+
+                Divider()
+                    .background(Color.dividerColor)
+                    .padding(.vertical, 8)
+
+                NavigationRow(
+                    iconName: "globe",
+                    iconColor: .accentPurple,
+                    title: L("dns_settings"),
+                    value: nil
+                ) {
+                    showDNSSettings = true
                 }
             }
         }
@@ -203,11 +291,11 @@ struct SettingsView: View {
     // MARK: - App Info Section
     private var appInfoSection: some View {
         VStack(spacing: 8) {
-            Text("Jentacular vpn")
+            Text(L("app_name"))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.secondaryText)
 
-            Text("Версия \(AppConstants.appVersion) (\(AppConstants.buildNumber))")
+            Text(String(format: L("version_format"), AppConstants.appVersion, AppConstants.buildNumber))
                 .font(.system(size: 14))
                 .foregroundColor(.tertiaryText)
         }
@@ -247,11 +335,11 @@ struct LanguageSelectionView: View {
                     }
                 }
                 .listStyle(PlainListStyle())
-                .navigationTitle("Язык")
+                .navigationTitle(L("language_nav"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Готово") {
+                        Button(L("done")) {
                             dismiss()
                         }
                     }

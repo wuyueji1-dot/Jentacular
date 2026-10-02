@@ -28,7 +28,7 @@ struct PrivacyCenterView: View {
                     .padding(.bottom, 40)
                 }
             }
-            .navigationTitle("Центр конфиденциальности")
+            .navigationTitle(L("privacy_center_nav"))
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button(action: { dismiss() }) {
@@ -48,12 +48,12 @@ struct PrivacyCenterView: View {
                 .foregroundColor(.accentPurple)
                 .padding(.bottom, 8)
 
-            Text("Конфиденциальность по умолчанию")
+            Text(L("privacy_by_default"))
                 .font(.system(size: 26, weight: .bold))
                 .foregroundColor(.primaryText)
                 .multilineTextAlignment(.center)
 
-            Text("Jentacular VPN создан, чтобы знать о вас как можно меньше.")
+            Text(L("privacy_by_default_desc"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondaryText)
                 .multilineTextAlignment(.center)
@@ -68,29 +68,29 @@ struct PrivacyCenterView: View {
             PrivacyFeatureCard(
                 iconName: "person.crop.circle.badge.xmark",
                 iconColor: .accentPurple,
-                title: "Без аккаунта",
-                description: "Без регистрации, почты и телефона. Просто подключайтесь."
+                title: L("privacy_no_account"),
+                description: L("privacy_no_account_desc")
             )
 
             PrivacyFeatureCard(
                 iconName: "checkmark.shield.fill",
                 iconColor: .accentBlue,
-                title: "Аутентификация по сертификату",
-                description: "Доступ предоставляется по сертификату устройства, а не по паролю."
+                title: L("privacy_cert_auth"),
+                description: L("privacy_cert_auth_desc")
             )
 
             PrivacyFeatureCard(
                 iconName: "externaldrive.fill.badge.checkmark",
                 iconColor: .accentCyan,
-                title: "Локальное хранение данных",
-                description: "Ваша история и настройки не покидают это устройство."
+                title: L("privacy_local_storage"),
+                description: L("privacy_local_storage_desc")
             )
 
             PrivacyFeatureCard(
                 iconName: "eye.slash.fill",
                 iconColor: .accentRed,
-                title: "Без слежки",
-                description: "Мы не ведём журналы, не продаём и не анализируем вашу активность."
+                title: L("privacy_no_tracking"),
+                description: L("privacy_no_tracking_center_desc")
             )
         }
     }

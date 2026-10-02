@@ -121,16 +121,14 @@ jobs:
           mkdir -p screenshots
           BUNDLE_ID="com.hitvpn.hitvpn2026"
 
-          # Set privacy consent as seen to skip onboarding
-          xcrun simctl spawn booted defaults write $BUNDLE_ID has_seen_privacy_consent -bool true
+          # Function to screenshot a specific screen
+          screenshot_screen() {
+            local screen_name=$1
+            local file_name=$2
+            echo "=== Screenshotting: $screen_name ==="
 
-          # Function to screenshot a specific tab
-          screenshot_tab() {
-            local tab_num=$1
-            local tab_name=$2
-            echo "=== Screenshotting tab: $tab_name ==="
-
-            xcrun simctl spawn booted defaults write $BUNDLE_ID DebugSelectedTab -int $tab_num
+            xcrun simctl spawn booted defaults write $BUNDLE_ID DebugScreen -string "$screen_name"
+            xcrun simctl spawn booted defaults write $BUNDLE_ID has_seen_privacy_consent -bool true
 
             xcrun simctl terminate booted $BUNDLE_ID 2>/dev/null || echo "App not running"
             sleep 1
@@ -138,18 +136,30 @@ jobs:
             xcrun simctl launch booted $BUNDLE_ID 2>&1
             sleep 4
 
-            xcrun simctl spawn booted launchctl list | grep -i "hitvpn" || echo "App not running"
-
-            xcrun simctl io booted screenshot "screenshots/${tab_name}.png" || echo "screenshot failed"
-            echo "Saved: screenshots/${tab_name}.png"
+            xcrun simctl io booted screenshot "screenshots/${file_name}.png" || echo "screenshot failed"
+            echo "Saved: screenshots/${file_name}.png"
           }
 
-          # Screenshot each tab (0=home, 1=shield, 2=servers, 3=analysis, 4=settings)
-          screenshot_tab 0 "01_Home"
-          screenshot_tab 1 "02_Shield"
-          screenshot_tab 2 "03_Servers"
-          screenshot_tab 3 "04_Analysis"
-          screenshot_tab 4 "05_Settings"
+          # Screenshot all screens
+          screenshot_screen "privacy_consent" "00_PrivacyConsent"
+          screenshot_screen "home" "01_Home"
+          screenshot_screen "shield" "02_Shield"
+          screenshot_screen "servers" "03_Servers"
+          screenshot_screen "analysis" "04_Analysis"
+          screenshot_screen "settings" "05_Settings"
+          screenshot_screen "connection_history" "06_ConnectionHistory"
+          screenshot_screen "privacy_center" "07_PrivacyCenter"
+          screenshot_screen "privacy_policy" "08_PrivacyPolicy"
+          screenshot_screen "network_tools" "09_NetworkTools"
+          screenshot_screen "speed_test_history" "10_SpeedTestHistory"
+          screenshot_screen "dns_settings" "11_DNSSettings"
+          screenshot_screen "about" "12_About"
+          screenshot_screen "help" "13_Help"
+          screenshot_screen "server_detail" "14_ServerDetail"
+          screenshot_screen "security_detail" "15_SecurityDetail"
+
+          # Clear debug screen for normal launch
+          xcrun simctl spawn booted defaults delete $BUNDLE_ID DebugScreen 2>/dev/null || true
 
           echo "=== All screenshots ==="
           ls -la screenshots/

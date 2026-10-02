@@ -13,29 +13,26 @@ struct ShieldView: View {
     @EnvironmentObject var vpnService: VPNConnectionService
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Header
-                        headerSection
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    headerSection
 
-                        // Security score
-                        scoreSection
+                    // Security score
+                    scoreSection
 
-                        // Security items
-                        securityItemsSection
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 40)
+                    // Security items
+                    securityItemsSection
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
-            .navigationBarHidden(true)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarHidden(true)
         .onAppear {
             securityService.calculateSecurityScore()
         }
@@ -44,11 +41,11 @@ struct ShieldView: View {
     // MARK: - Header Section
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Умный щит")
+            Text(L("shield_title"))
                 .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.primaryText)
 
-            Text("Ваш текущий уровень безопасности сети")
+            Text(L("shield_subtitle"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondaryText)
         }
@@ -87,13 +84,13 @@ struct ShieldView: View {
     private var scoreDescription: String {
         switch securityService.securityScore {
         case 0...40:
-            return "Ваш уровень безопасности низкий. Рекомендуется подключить VPN для защиты."
+            return L("security_poor")
         case 41...70:
-            return "Ваш уровень безопасности средний. Подключите VPN для полной защиты."
+            return L("security_medium")
         case 71...90:
-            return "Ваш уровень безопасности хороший. Продолжайте следить за настройками."
+            return L("security_good")
         default:
-            return "Отличный уровень безопасности! Ваше соединение полностью защищено."
+            return L("security_excellent")
         }
     }
 

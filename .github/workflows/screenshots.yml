@@ -1,0 +1,121 @@
+name: App Store Screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    name: Generate App Store Screenshots
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - name: "iPhone 16 Pro"
+            type: "iphone"
+          - name: "iPad Pro 13-inch (M4)"
+            type: "ipad"
+        language:
+          - code: "ru"
+            name: "Russian"
+          - code: "en"
+            name: "English"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode and Simulators
+        run: |
+          xcodebuild -version
+          echo "=== Available simulators ==="
+          xcrun simctl list devices available | grep -E "iPhone|iPad" | head -20
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          find . -name "*.swift" -exec perl -pi -e 's/\r\n/\n/g' {} \;
+          find . -name "*.plist" -exec perl -pi -e 's/\r\n/\n/g' {} \;
+          find . -name "*.yml" -exec perl -pi -e 's/\r\n/\n/g' {} \;
+          perl -pi -e 's/CODE_SIGN_ENTITLEMENTS.*//g' project.yml
+          xcodegen generate
+
+      - name: Build App
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Jentacular.xcodeproj \
+            -scheme "Jentacular" \
+            -destination "platform=iOS Simulator,name=${{ matrix.device.name }}" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build.log | tail -100
+          if grep -q "BUILD SUCCEEDED" build.log; then
+            echo "✅ BUILD SUCCEEDED"
+          else
+            echo "❌ BUILD FAILED"
+            grep -i "error:" build.log | head -30
+            exit 1
+          fi
+
+      - name: Boot Simulator
+        run: |
+          xcrun simctl erase "${{ matrix.device.name }}" 2>&1 || echo "Erase warning"
+          xcrun simctl boot "${{ matrix.device.name }}" 2>/dev/null || echo "Already booted"
+          sleep 15
+
+      - name: Install App
+        run: |
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Jentacular.app" -type d 2>/dev/null | grep "Debug-iphonesimulator" | head -1)
+          echo "App path: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: App not found"
+            find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null | head -10
+            exit 1
+          fi
+          codesign --force --deep --sign - "$APP_PATH" 2>&1
+          xcrun simctl install booted "$APP_PATH"
+
+      - name: Take Screenshots
+        run: |
+          BUNDLE_ID="com.hitvpn.hitvpn2026"
+          DEVICE_TYPE="${{ matrix.device.type }}"
+          LANG_CODE="${{ matrix.language.code }}"
+          mkdir -p screenshots
+
+          xcrun simctl spawn booted defaults write $BUNDLE_ID selectedLanguage -string "$LANG_CODE"
+          xcrun simctl spawn booted defaults write $BUNDLE_ID has_seen_privacy_consent -bool true
+
+          take_screenshot() {
+            local tab_index=$1
+            local tab_name=$2
+            echo "=== Screenshotting: $LANG_CODE - $tab_name ==="
+            xcrun simctl spawn booted defaults write $BUNDLE_ID initial_tab -int $tab_index
+            xcrun simctl terminate booted $BUNDLE_ID 2>/dev/null || true
+            sleep 2
+            xcrun simctl launch booted $BUNDLE_ID 2>&1
+            sleep 5
+            local filename="${DEVICE_TYPE}_${LANG_CODE}_${tab_name}.png"
+            xcrun simctl io booted screenshot "screenshots/$filename"
+            ls -la "screenshots/$filename"
+          }
+
+          take_screenshot 0 "01_Home"
+          take_screenshot 1 "02_Shield"
+          take_screenshot 2 "03_Servers"
+          take_screenshot 4 "04_Settings"
+
+          echo "=== All screenshots ==="
+          ls -la screenshots/
+
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.device.type }}-${{ matrix.language.code }}
+          path: screenshots/
+          retention-days: 30

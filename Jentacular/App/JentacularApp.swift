@@ -16,15 +16,29 @@ struct JentacularApp: App {
     @StateObject private var settingsService = SettingsService.shared
     @StateObject private var historyService = ConnectionHistoryService.shared
     @StateObject private var localizationManager = LocalizationManager.shared
+    @StateObject private var pingService = PingService.shared
+    @StateObject private var cacheService = DataCacheService.shared
+    @StateObject private var networkMonitor = NetworkMonitorService.shared
+    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var speedTestService = SpeedTestHistoryService.shared
+    @StateObject private var networkToolsService = NetworkToolsService.shared
+    @StateObject private var dnsSettingsService = DNSSettingsService.shared
 
     // MARK: - State
     @State private var showPrivacyConsent = false
+    @State private var languageRefresh = 0
 
     init() {
         // Check if privacy consent has been shown
         if !UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent) {
             _showPrivacyConsent = State(initialValue: true)
         }
+
+        // Start network monitoring
+        NetworkMonitorService.shared.startMonitoring()
+
+        // Log app launch
+        AppLogger.shared.info(.lifecycle, "App launched - version \(AppConstants.appVersion) build \(DeviceInfo.appBuildNumber)")
 
         // Configure global appearance
         configureAppearance()
@@ -33,17 +47,45 @@ struct JentacularApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabView()
+                .id(languageRefresh)
                 .environmentObject(vpnService)
                 .environmentObject(securityService)
                 .environmentObject(analysisService)
                 .environmentObject(settingsService)
                 .environmentObject(historyService)
                 .environmentObject(localizationManager)
+                .environmentObject(pingService)
+                .environmentObject(cacheService)
+                .environmentObject(networkMonitor)
+                .environmentObject(themeManager)
+                .environmentObject(speedTestService)
+                .environmentObject(networkToolsService)
+                .environmentObject(dnsSettingsService)
                 .preferredColorScheme(.dark)
+                .onReceive(NotificationCenter.default.publisher(for: .appLanguageDidChange)) { _ in
+                    languageRefresh += 1
+                }
+                .onAppear {
+                    // Auto-connect if enabled and privacy consent already given
+                    let hasConsent = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent)
+                    let autoConnect = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.autoConnectEnabled)
+                    if hasConsent && autoConnect {
+                        Task {
+                            await VPNConnectionService.shared.connect()
+                        }
+                    }
+                }
                 .fullScreenCover(isPresented: $showPrivacyConsent) {
                     PrivacyConsentView {
                         UserDefaults.standard.set(true, forKey: AppConstants.UserDefaultsKeys.hasSeenPrivacyConsent)
                         showPrivacyConsent = false
+                        // Auto-connect after consent if enabled
+                        let autoConnect = UserDefaults.standard.bool(forKey: AppConstants.UserDefaultsKeys.autoConnectEnabled)
+                        if autoConnect {
+                            Task {
+                                await VPNConnectionService.shared.connect()
+                            }
+                        }
                     }
                 }
         }

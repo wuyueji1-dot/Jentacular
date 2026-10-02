@@ -2,12 +2,11 @@
 //  SecurityScoreService.swift
 //  Jentacular
 //
-//  Calculates and monitors device security score based on multiple factors
+//  Calculates device security score - 100 when VPN is connected
 //
 
 import Foundation
 import Combine
-import Network
 
 final class SecurityScoreService: ObservableObject {
     static let shared = SecurityScoreService()
@@ -20,6 +19,7 @@ final class SecurityScoreService: ObservableObject {
     // MARK: - Private Properties
     private var monitorTimer: Timer?
     private let vpnService = VPNConnectionService.shared
+    private var cancellables = Set<AnyCancellable>()
 
     private init() {
         calculateSecurityScore()
@@ -36,129 +36,98 @@ final class SecurityScoreService: ObservableObject {
             .store(in: &cancellables)
     }
 
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - Calculate Security Score
     func calculateSecurityScore() {
-        var score = 0
-        var items: [SecurityItem] = []
-
-        // VPN Tunnel (30 points)
         let vpnActive = vpnService.connectionStatus == .connected
+
         if vpnActive {
-            score += 30
-            items.append(SecurityItem(
-                title: "VPN-туннель",
-                description: "Трафик зашифрован",
-                iconName: "lock.shield.fill",
-                iconColor: .green,
-                status: .good
-            ))
+            // When VPN is connected: full 100 score, all items good
+            securityScore = 100
+            securityItems = [
+                SecurityItem(
+                    title: L("vpn_tunnel"),
+                    description: L("vpn_tunnel_active"),
+                    iconName: "lock.shield.fill",
+                    iconColor: .green,
+                    status: .good
+                ),
+                SecurityItem(
+                    title: L("wifi_security"),
+                    description: L("wifi_secure"),
+                    iconName: "wifi",
+                    iconColor: .green,
+                    status: .good
+                ),
+                SecurityItem(
+                    title: L("network_environment"),
+                    description: L("trusted_secure_network"),
+                    iconName: "network",
+                    iconColor: .green,
+                    status: .good
+                ),
+                SecurityItem(
+                    title: L("dns_protection"),
+                    description: L("dns_requests_protected"),
+                    iconName: "dot.radiowaves.left.and.right",
+                    iconColor: .green,
+                    status: .good
+                )
+            ]
         } else {
+            // When VPN disconnected: medium score with warnings
+            var score = 0
+            var items: [SecurityItem] = []
+
+            // VPN Tunnel (0 points when disconnected)
             items.append(SecurityItem(
-                title: "VPN-туннель",
-                description: "Трафик не зашифрован",
+                title: L("vpn_tunnel"),
+                description: L("vpn_tunnel_inactive"),
                 iconName: "lock.shield",
                 iconColor: .red,
                 status: .critical
             ))
-        }
 
-        // Wi-Fi Security (25 points)
-        let wifiSecure = checkWiFiSecurity()
-        if wifiSecure {
+            // Wi-Fi Security (25 points)
             score += 25
             items.append(SecurityItem(
-                title: "Безопасность Wi-Fi",
-                description: "Ваше соединение защищено",
+                title: L("wifi_security"),
+                description: L("wifi_secure"),
                 iconName: "wifi",
                 iconColor: .green,
                 status: .good
             ))
-        } else {
-            score += 10
-            items.append(SecurityItem(
-                title: "Безопасность Wi-Fi",
-                description: "Проверьте настройки Wi-Fi",
-                iconName: "wifi.exclamationmark",
-                iconColor: .gold,
-                status: .warning
-            ))
-        }
 
-        // Network Environment (25 points)
-        let trustedNetwork = checkNetworkTrust()
-        if trustedNetwork {
-            score += 25
-            items.append(SecurityItem(
-                title: "Сетевая среда",
-                description: "Доверенная безлимитная сеть",
-                iconName: "network",
-                iconColor: .green,
-                status: .good
-            ))
-        } else {
-            score += 15
-            items.append(SecurityItem(
-                title: "Сетевая среда",
-                description: "Публичная сеть, используйте VPN",
-                iconName: "globe",
-                iconColor: .gold,
-                status: .warning
-            ))
-        }
-
-        // DNS Protection (20 points)
-        let dnsProtected = checkDNSProtection()
-        if dnsProtected {
+            // Network Environment (20 points - public network warning)
             score += 20
             items.append(SecurityItem(
-                title: "Защита DNS",
-                description: "DNS-запросы защищены",
-                iconName: "dot.radiowaves.left.and.right",
+                title: L("network_environment"),
+                description: L("trusted_unlimited_network"),
+                iconName: "globe",
                 iconColor: .green,
                 status: .good
             ))
-        } else {
-            score += 5
+
+            // DNS Protection (0 points - vulnerable without VPN)
             items.append(SecurityItem(
-                title: "Защита DNS",
-                description: "DNS-запросы могут быть видны",
+                title: L("dns_protection"),
+                description: L("dns_requests_visible"),
                 iconName: "exclamationmark.shield",
                 iconColor: .gold,
                 status: .warning
             ))
+
+            securityScore = score
+            securityItems = items
         }
-
-        securityScore = min(score, 100)
-        securityItems = items
-    }
-
-    // MARK: - Security Checks
-    private func checkWiFiSecurity() -> Bool {
-        // In a real implementation, this would check current Wi-Fi security type
-        // For simulator/debug, return true as default
-        return true
-    }
-
-    private func checkNetworkTrust() -> Bool {
-        // Check if connected to a trusted network (home/work) vs public
-        // For simplicity, return based on connection type
-        return true
-    }
-
-    private func checkDNSProtection() -> Bool {
-        // Check if DNS is protected (VPN active or custom DNS configured)
-        return vpnService.connectionStatus == .connected
     }
 
     // MARK: - Score Level
     var scoreLevel: String {
         switch securityScore {
-        case 0...40: return "НИЗКИЙ"
-        case 41...70: return "СРЕДНЕ"
-        case 71...90: return "ХОРОШО"
-        default: return "ОТЛИЧНО"
+        case 0...40: return L("score_low")
+        case 41...70: return L("score_medium")
+        case 71...90: return L("score_good")
+        default: return L("score_excellent")
         }
     }
 

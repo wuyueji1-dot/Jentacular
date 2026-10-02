@@ -2,185 +2,119 @@
 //  ServersView.swift
 //  Jentacular
 //
-//  Server selection list with search, sorting, and country filtering
+//  Server selection with single France node and real-time ping measurement
 //
 
 import SwiftUI
 
 struct ServersView: View {
     // MARK: - Environment Objects
+    @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var vpnService: VPNConnectionService
+    @EnvironmentObject var pingService: PingService
 
     // MARK: - State
-    @State private var searchText = ""
-    @State private var selectedSort: ServerSortOption = .recommended
+    @State private var isPinging = false
+    @State private var currentPing: Int? = nil
     @State private var showSortMenu = false
-    @State private var selectedCountry: String? = nil
-    @State private var selectedServerId: String? = AppConstants.vpnServerName
+    @State private var selectedSort: ServerSortOption = .recommended
+    @State private var searchText = ""
+    @State private var selectedCountry = "all"
 
-    // MARK: - Sample Server Data
-    private let allServers: [VPNServerNode] = [
-        VPNServerNode(
-            id: "france-1",
-            name: "France",
-            country: "France",
-            countryCode: "FR",
-            city: "Paris",
-            ipAddress: AppConstants.vpnServerAddress,
-            pingMs: 45,
-            loadPercent: 35,
-            isSelected: true
-        ),
-        VPNServerNode(
-            id: "germany-1",
-            name: "Frankfurt",
-            country: "Germany",
-            countryCode: "DE",
-            city: "Frankfurt",
-            ipAddress: "de.example.com",
-            pingMs: 52,
-            loadPercent: 48,
-            isSelected: false
-        ),
-        VPNServerNode(
-            id: "netherlands-1",
-            name: "Amsterdam",
-            country: "Netherlands",
-            countryCode: "NL",
-            city: "Amsterdam",
-            ipAddress: "nl.example.com",
-            pingMs: 58,
-            loadPercent: 62,
-            isSelected: false
-        ),
-        VPNServerNode(
-            id: "uk-1",
-            name: "London",
-            country: "United Kingdom",
-            countryCode: "GB",
-            city: "London",
-            ipAddress: "uk.example.com",
-            pingMs: 65,
-            loadPercent: 41,
-            isSelected: false
-        ),
-        VPNServerNode(
-            id: "usa-1",
-            name: "New York",
-            country: "United States",
-            countryCode: "US",
-            city: "New York",
-            ipAddress: "us.example.com",
-            pingMs: 120,
-            loadPercent: 55,
-            isSelected: false
-        ),
-        VPNServerNode(
-            id: "japan-1",
-            name: "Tokyo",
-            country: "Japan",
-            countryCode: "JP",
-            city: "Tokyo",
-            ipAddress: "jp.example.com",
-            pingMs: 180,
-            loadPercent: 30,
-            isSelected: false
-        ),
-        VPNServerNode(
-            id: "singapore-1",
-            name: "Singapore",
-            country: "Singapore",
-            countryCode: "SG",
-            city: "Singapore",
-            ipAddress: "sg.example.com",
-            pingMs: 160,
-            loadPercent: 45,
-            isSelected: false
-        )
-    ]
-
-    private var countries: [String] {
-        Array(Set(allServers.map { $0.country })).sorted()
-    }
-
-    private var filteredServers: [VPNServerNode] {
-        var result = allServers
-
-        // Filter by search
-        if !searchText.isEmpty {
-            result = result.filter { server in
-                server.name.localizedCaseInsensitiveContains(searchText) ||
-                server.country.localizedCaseInsensitiveContains(searchText) ||
-                server.city.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-
-        // Filter by country
-        if let country = selectedCountry {
-            result = result.filter { $0.country == country }
-        }
-
-        // Sort
-        switch selectedSort {
-        case .recommended:
-            result = result.sorted { $0.pingMs < $1.pingMs }
-        case .lowestPing:
-            result = result.sorted { $0.pingMs < $1.pingMs }
-        case .lowestLoad:
-            result = result.sorted { $0.loadPercent < $1.loadPercent }
-        case .name:
-            result = result.sorted { $0.name < $1.name }
-        }
-
-        return result
-    }
+    // MARK: - Single France Server
+    private let franceServer = VPNServerNode(
+        id: "france-paris-01",
+        name: "France",
+        country: "France",
+        countryCode: "FR",
+        city: "Paris",
+        ipAddress: AppConstants.vpnServerAddress,
+        pingMs: 0,
+        loadPercent: 30,
+        isSelected: true
+    )
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Header
-                    headerSection
+            VStack(spacing: 0) {
+                // Header
+                headerSection
 
-                    // Search bar
-                    searchSection
+                // Search bar (decorative since only one server)
+                searchSection
 
-                    // Sort and filter
-                    sortFilterSection
+                // Sort section
+                sortSection
 
-                    // Server list
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredServers) { server in
-                                ServerRow(
-                                    server: server,
-                                    isSelected: selectedServerId == server.id
-                                ) {
-                                    selectServer(server)
+                // Server list
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // France server card with real ping
+                        FranceServerCard(
+                            server: franceServer,
+                            ping: currentPing,
+                            isPinging: isPinging,
+                            isConnected: vpnService.connectionStatus == .connected,
+                            onRefreshPing: {
+                                Task {
+                                    await measurePing()
+                                }
+                            },
+                            onConnect: {
+                                Task {
+                                    await vpnService.toggleConnection()
                                 }
                             }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                        .padding(.bottom, 40)
+                        )
+
+                        // Server info card
+                        serverInfoCard
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 40)
                 }
             }
-            .navigationBarHidden(true)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarTitle(L("servers_title"), displayMode: .inline)
+        .navigationBarItems(leading: backButton)
+        .onAppear {
+            Task {
+                await measurePing()
+            }
+        }
+    }
+
+    // MARK: - Back Button
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(L("back"))
+                    .font(.system(size: 16))
+            }
+            .foregroundColor(.accentCyan)
+        }
+    }
+
+    // MARK: - Measure Ping
+    private func measurePing() async {
+        isPinging = true
+        currentPing = await pingService.ping(host: AppConstants.vpnServerAddress)
+        isPinging = false
     }
 
     // MARK: - Header Section
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Обзор серверов")
+            Text(L("servers_title"))
                 .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.primaryText)
 
-            Text("Выберите узел подключения")
+            Text(L("servers_subtitle"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondaryText)
         }
@@ -196,23 +130,34 @@ struct ServersView: View {
                 .foregroundColor(.tertiaryText)
                 .padding(.leading, 16)
 
-            TextField("Поиск страны или города", text: $searchText)
+            TextField(L("search_placeholder"), text: $searchText)
                 .font(.system(size: 16))
                 .foregroundColor(.primaryText)
-                .padding(.vertical, 14)
+                .accentColor(.accentCyan)
+
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.tertiaryText)
+                        .padding(.trailing, 12)
+                }
+            }
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
         .background(Color.cardBackground)
         .cornerRadius(16)
         .padding(.horizontal, 20)
         .padding(.top, 16)
     }
 
-    // MARK: - Sort and Filter Section
-    private var sortFilterSection: some View {
+    // MARK: - Sort Section
+    private var sortSection: some View {
         VStack(spacing: 12) {
-            // Sort button
             HStack {
-                Text("Сортировка")
+                Text(L("sort_by"))
                     .font(.system(size: 14))
                     .foregroundColor(.secondaryText)
 
@@ -232,61 +177,14 @@ struct ServersView: View {
             }
             .padding(.horizontal, 20)
 
-            // Sort menu
-            if showSortMenu {
-                VStack(spacing: 0) {
-                    ForEach(ServerSortOption.allCases) { option in
-                        Button(action: {
-                            selectedSort = option
-                            showSortMenu = false
-                        }) {
-                            HStack {
-                                if option == selectedSort {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentCyan)
-                                } else {
-                                    Spacer().frame(width: 20)
-                                }
-
-                                Text(option.displayName)
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.primaryText)
-
-                                Spacer()
-                            }
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 20)
-                        }
-
-                        if option != ServerSortOption.allCases.last {
-                            Divider()
-                                .background(Color.dividerColor)
-                                .padding(.horizontal, 20)
-                        }
-                    }
-                }
-                .background(Color.cardBackgroundHighlighted)
-                .cornerRadius(16)
-                .padding(.horizontal, 20)
-            }
-
             // Country filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    CountryChip(
-                        title: "Все",
-                        isSelected: selectedCountry == nil
-                    ) {
-                        selectedCountry = nil
+                    CountryChip(title: L("all"), isSelected: selectedCountry == "all") {
+                        selectedCountry = "all"
                     }
-
-                    ForEach(countries, id: \.self) { country in
-                        CountryChip(
-                            title: country,
-                            isSelected: selectedCountry == country
-                        ) {
-                            selectedCountry = country
-                        }
+                    CountryChip(title: "France", isSelected: selectedCountry == "france") {
+                        selectedCountry = "france"
                     }
                 }
                 .padding(.horizontal, 20)
@@ -295,11 +193,160 @@ struct ServersView: View {
         .padding(.top, 16)
     }
 
-    // MARK: - Select Server
-    private func selectServer(_ server: VPNServerNode) {
-        selectedServerId = server.id
-        // In a real implementation, this would update the VPN configuration
-        // For now, we only support the fixed France server
+    // MARK: - Server Info Card
+    private var serverInfoCard: some View {
+        CustomCard {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(L("server_info"))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.primaryText)
+
+                InfoRow(label: L("address"), value: AppConstants.vpnServerAddress)
+                InfoRow(label: L("protocol"), value: "IKEv2")
+                InfoRow(label: L("encryption"), value: "AES-256-GCM")
+                InfoRow(label: L("location"), value: "Paris, France")
+                InfoRow(label: L("load"), value: "30%")
+            }
+        }
+    }
+}
+
+// MARK: - France Server Card
+struct FranceServerCard: View {
+    let server: VPNServerNode
+    let ping: Int?
+    let isPinging: Bool
+    let isConnected: Bool
+    let onRefreshPing: () -> Void
+    let onConnect: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 16) {
+                // Flag
+                Text(server.flagEmoji)
+                    .font(.system(size: 40))
+                    .frame(width: 56, height: 56)
+                    .background(Color.cardBackgroundHighlighted)
+                    .cornerRadius(14)
+
+                // Server info
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(server.name)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primaryText)
+
+                    Text(String(format: L("server_location_format"), server.city, server.country))
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondaryText)
+
+                    // Load indicator
+                    HStack(spacing: 8) {
+                        LoadIndicatorBar(loadPercent: server.loadPercent)
+                            .frame(width: 80)
+                        Text("\(server.loadPercent)\(L("percent_unit"))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.tertiaryText)
+                    }
+                }
+
+                Spacer()
+
+                // Ping and status
+                VStack(alignment: .trailing, spacing: 8) {
+                    // Ping with refresh
+                    Button(action: onRefreshPing) {
+                        HStack(spacing: 6) {
+                            if isPinging {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .accentCyan))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Text(ping != nil ? "\(ping!) ms" : "— ms")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(pingColor)
+
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.accentCyan)
+                            }
+                        }
+                    }
+
+                    // Status badge
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(isConnected ? Color.accentGreen : Color.accentGold)
+                            .frame(width: 8, height: 8)
+
+                        Text(isConnected ? L("connected") : L("available"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(isConnected ? .accentGreen : .accentGold)
+                    }
+                }
+            }
+            .padding(20)
+
+            // Connect button
+            Button(action: onConnect) {
+                HStack {
+                    Image(systemName: isConnected ? "power" : "bolt.fill")
+                        .font(.system(size: 18, weight: .semibold))
+
+                    Text(isConnected ? L("disconnect").uppercased() : L("connect"))
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: isConnected ? [.accentRed, .accentRed.opacity(0.8)] : [.accentBlue, .accentCyan]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(14)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .background(Color.cardBackgroundHighlighted)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.accentCyan.opacity(0.5), lineWidth: 2)
+        )
+    }
+
+    private var pingColor: Color {
+        guard let ping = ping else { return .tertiaryText }
+        switch ping {
+        case 0...50: return .accentGreen
+        case 51...100: return .accentCyan
+        case 101...200: return .accentGold
+        default: return .accentRed
+        }
+    }
+}
+
+// MARK: - Info Row
+struct InfoRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(.secondaryText)
+
+            Spacer()
+
+            Text(value)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primaryText)
+        }
     }
 }
 

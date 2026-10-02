@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  Jentacular
 //
-//  Main home screen with VPN connect button, server info, and connection status
+//  Main home screen with animated VPN connect button and connection status
 //
 
 import SwiftUI
@@ -11,26 +11,41 @@ struct HomeView: View {
     // MARK: - Environment Objects
     @EnvironmentObject var vpnService: VPNConnectionService
     @EnvironmentObject var securityService: SecurityScoreService
+    @EnvironmentObject var pingService: PingService
 
     // MARK: - State
     @State private var showServerList = false
+    @State private var buttonScale: CGFloat = 1.0
+    @State private var pulseOpacity: Double = 0.0
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
+
+                // Background gradient when connected
+                if vpnService.connectionStatus == .connected {
+                    RadialGradient(
+                        gradient: Gradient(colors: [Color.accentGreen.opacity(0.15), Color.clear]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 300
+                    )
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                }
 
                 ScrollView {
                     VStack(spacing: 24) {
                         // Header
                         headerSection
 
-                        // Connect button
+                        // Connect button with animation
                         connectButtonSection
 
-                        // Connection info
+                        // Connection info (shown when connected)
                         if vpnService.connectionStatus == .connected {
                             connectionInfoSection
+                                .transition(.move(edge: .top).combined(with: .opacity))
                         }
 
                         // Current server
@@ -43,17 +58,19 @@ struct HomeView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 40)
                 }
-            }
             .navigationBarHidden(true)
+            .animation(.easeInOut(duration: 0.3), value: vpnService.connectionStatus)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(isPresented: $showServerList) {
+            NavigationView { ServersView() }
+        }
     }
 
     // MARK: - Header Section
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Jentacular")
+                Text(L("app_name"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.primaryText)
 
@@ -68,9 +85,9 @@ struct HomeView: View {
             VStack(spacing: 4) {
                 Text("\(securityService.securityScore)")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.accentGold)
+                    .foregroundColor(scoreColor)
 
-                Text("безопасность")
+                Text(L("security_score"))
                     .font(.system(size: 11))
                     .foregroundColor(.tertiaryText)
             }
@@ -81,66 +98,126 @@ struct HomeView: View {
         }
     }
 
+    private var scoreColor: Color {
+        switch securityService.securityScore {
+        case 0...40: return .accentRed
+        case 41...70: return .accentGold
+        case 71...90: return .accentCyan
+        default: return .accentGreen
+        }
+    }
+
     private var statusSubtitle: String {
         switch vpnService.connectionStatus {
-        case .connected: return "Защищенное соединение"
-        case .connecting: return "Подключение..."
-        case .disconnecting: return "Отключение..."
-        case .error: return "Ошибка подключения"
-        case .disconnected: return "Нажмите для подключения"
+        case .connected: return L("connected")
+        case .connecting: return L("connecting")
+        case .disconnecting: return "Disconnecting..."
+        case .error: return "Connection error"
+        case .disconnected: return L("home_subtitle")
         }
     }
 
     // MARK: - Connect Button Section
     private var connectButtonSection: some View {
         VStack(spacing: 20) {
-            // Animated connect button
-            Button(action: {
-                Task {
-                    await vpnService.toggleConnection()
-                }
-            }) {
-                ZStack {
-                    // Outer glow
-                    Circle()
-                        .fill(buttonColor.opacity(0.2))
-                        .frame(width: 200, height: 200)
-                        .blur(radius: 20)
-
-                    // Main circle
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [buttonColor, buttonColor.opacity(0.8)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+            ZStack {
+                // Pulsing rings when connecting
+                if vpnService.connectionStatus == .connecting {
+                    ForEach(0..<3) { i in
+                        Circle()
+                            .stroke(buttonColor.opacity(0.3), lineWidth: 2)
+                            .frame(width: 160 + CGFloat(i * 30), height: 160 + CGFloat(i * 30))
+                            .opacity(pulseOpacity)
+                            .animation(
+                                Animation.easeOut(duration: 1.5)
+                                    .repeatForever(autoreverses: false)
+                                    .delay(Double(i) * 0.5),
+                                value: pulseOpacity
                             )
-                        )
-                        .frame(width: 160, height: 160)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.2), lineWidth: 2)
-                        )
+                    }
+                    .onAppear { pulseOpacity = 1.0 }
+                    .onDisappear { pulseOpacity = 0.0 }
+                }
 
-                    // Icon
-                    VStack(spacing: 8) {
-                        Image(systemName: buttonIconName)
-                            .font(.system(size: 48, weight: .semibold))
-                            .foregroundColor(.white)
+                // Outer glow
+                Circle()
+                    .fill(buttonColor.opacity(0.2))
+                    .frame(width: 200, height: 200)
+                    .blur(radius: 20)
 
-                        Text(buttonTitle)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                // Main button
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    Task {
+                        await vpnService.toggleConnection()
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [buttonColor, buttonColor.opacity(0.85)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 160, height: 160)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.25), lineWidth: 2)
+                            )
+                            .shadow(color: buttonColor.opacity(0.5), radius: 20, x: 0, y: 10)
+
+                        VStack(spacing: 10) {
+                            Image(systemName: buttonIconName)
+                                .font(.system(size: 48, weight: .semibold))
+                                .foregroundColor(.white)
+                                .rotationEffect(.degrees(vpnService.connectionStatus == .connecting ? 360 : 0))
+                                .animation(
+                                    vpnService.connectionStatus == .connecting ?
+                                        Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default,
+                                    value: vpnService.connectionStatus
+                                )
+
+                            Text(buttonTitle)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(.white)
+                        }
                     }
                 }
+                .buttonStyle(PlainButtonStyle())
+                .scaleEffect(buttonScale)
+                .pressAction {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        buttonScale = 0.95
+                    }
+                } onRelease: {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        buttonScale = 1.0
+                    }
+                }
+                .disabled(vpnService.isLoading)
             }
-            .buttonStyle(PlainButtonStyle())
-            .disabled(vpnService.isLoading)
+            .frame(height: 200)
 
             // Loading indicator
             if vpnService.isLoading {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .accentBlue))
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .accentBlue))
+                    Text(L("connecting"))
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondaryText)
+                }
+            }
+
+            // Error message
+            if let error = vpnService.lastError {
+                Text(error)
+                    .font(.system(size: 13))
+                    .foregroundColor(.accentRed)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
             }
         }
         .padding(.vertical, 20)
@@ -167,11 +244,11 @@ struct HomeView: View {
 
     private var buttonTitle: String {
         switch vpnService.connectionStatus {
-        case .connected: return "ОТКЛЮЧИТЬ"
-        case .connecting: return "ПОДКЛЮЧЕНИЕ"
-        case .disconnecting: return "ОТКЛЮЧЕНИЕ"
-        case .error: return "ОШИБКА"
-        case .disconnected: return "ПОДКЛЮЧИТЬ"
+        case .connected: return L("disconnect_button")
+        case .connecting: return L("connecting")
+        case .disconnecting: return "Disconnecting"
+        case .error: return "Error"
+        case .disconnected: return L("connect_button")
         }
     }
 
@@ -183,7 +260,7 @@ struct HomeView: View {
                     Image(systemName: "clock.fill")
                         .foregroundColor(.accentCyan)
 
-                    Text("Время подключения")
+                    Text(L("connection_time"))
                         .font(.system(size: 15))
                         .foregroundColor(.secondaryText)
 
@@ -201,13 +278,13 @@ struct HomeView: View {
                     Image(systemName: "arrow.down.circle.fill")
                         .foregroundColor(.accentGreen)
 
-                    Text("Скачивание")
+                    Text(L("download"))
                         .font(.system(size: 15))
                         .foregroundColor(.secondaryText)
 
                     Spacer()
 
-                    Text("— Мбит/с")
+                    Text(L("mbps"))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primaryText)
                 }
@@ -216,13 +293,13 @@ struct HomeView: View {
                     Image(systemName: "arrow.up.circle.fill")
                         .foregroundColor(.accentBlue)
 
-                    Text("Загрузка")
+                    Text(L("upload"))
                         .font(.system(size: 15))
                         .foregroundColor(.secondaryText)
 
                     Spacer()
 
-                    Text("— Мбит/с")
+                    Text(L("mbps"))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primaryText)
                 }
@@ -235,17 +312,23 @@ struct HomeView: View {
         Button(action: { showServerList = true }) {
             CustomCard {
                 HStack(spacing: 16) {
-                    Text(VPNServerNode.flagEmoji(for: AppConstants.vpnServerCountryCode))
+                    Text("🇫🇷")
                         .font(.system(size: 32))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Текущий сервер")
+                        Text(L("current_server"))
                             .font(.system(size: 13))
                             .foregroundColor(.tertiaryText)
 
-                        Text("\(AppConstants.vpnServerName) — \(AppConstants.vpnServerCity)")
+                        Text(L("france_paris"))
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.primaryText)
+
+                        if let ping = pingService.lastPingMs {
+                            Text(String(format: L("ping_ms"), ping))
+                                .font(.system(size: 12))
+                                .foregroundColor(ping < 100 ? .accentGreen : .accentGold)
+                        }
                     }
 
                     Spacer()
@@ -257,9 +340,6 @@ struct HomeView: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
-        .sheet(isPresented: $showServerList) {
-            ServersView()
-        }
     }
 
     // MARK: - Quick Stats Section
@@ -267,23 +347,23 @@ struct HomeView: View {
         HStack(spacing: 12) {
             QuickStatCard(
                 iconName: "shield.fill",
-                iconColor: .accentGreen,
-                value: vpnService.connectionStatus == .connected ? "Да" : "Нет",
-                label: "VPN активен"
+                iconColor: vpnService.connectionStatus == .connected ? .accentGreen : .accentRed,
+                value: vpnService.connectionStatus == .connected ? L("vpn_active") : L("vpn_inactive"),
+                label: L("vpn_active_label")
             )
 
             QuickStatCard(
                 iconName: "eye.slash.fill",
-                iconColor: .accentPurple,
-                value: vpnService.connectionStatus == .connected ? "Скрыт" : "Виден",
-                label: "IP адрес"
+                iconColor: vpnService.connectionStatus == .connected ? .accentPurple : .accentGold,
+                value: vpnService.connectionStatus == .connected ? L("ip_hidden") : L("ip_visible"),
+                label: L("ip_address_label")
             )
 
             QuickStatCard(
                 iconName: "lock.fill",
                 iconColor: .accentCyan,
-                value: "AES-256",
-                label: "Шифрование"
+                value: L("encryption"),
+                label: L("encryption_label")
             )
         }
     }
@@ -319,5 +399,16 @@ struct QuickStatCard: View {
         .padding(.horizontal, 8)
         .background(Color.cardBackground)
         .cornerRadius(16)
+    }
+}
+
+// MARK: - Press Action Modifier
+extension View {
+    func pressAction(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+        )
     }
 }

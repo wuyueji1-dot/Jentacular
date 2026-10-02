@@ -6,7 +6,13 @@
 	<array>
 		<string>allow-vpn</string>
 	</array>
-	<key>com.apple.developer.networking.HotspotConfiguration</key>
-	<true/>
+	<key>com.apple.developer.networking.networkextension</key>
+	<array>
+		<string>packet-tunnel-provider</string>
+	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.hitvpn.hitvpn2026.shared</string>
+	</array>
 </dict>
 </plist>

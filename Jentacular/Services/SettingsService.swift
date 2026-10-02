@@ -7,6 +7,8 @@
 
 import Foundation
 import Combine
+import UserNotifications
+import UIKit
 
 final class SettingsService: ObservableObject {
     static let shared = SettingsService()
@@ -80,11 +82,11 @@ final class SettingsService: ObservableObject {
 
         switch status {
         case .connected:
-            content.title = "VPN Подключен"
-            content.body = "Ваше соединение защищено"
+            content.title = L("vpn_connected")
+            content.body = L("wifi_secure")
         case .disconnected:
-            content.title = "VPN Отключен"
-            content.body = "Ваше соединение больше не защищено"
+            content.title = L("vpn_disconnected")
+            content.body = L("connection_no_longer_secure")
         default:
             return
         }

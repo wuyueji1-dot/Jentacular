@@ -10,16 +10,23 @@ settings:
     IPHONEOS_DEPLOYMENT_TARGET: "15.0"
     TARGETED_DEVICE_FAMILY: "1,2"
     ONLY_ACTIVE_ARCH: YES
-    MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
-    CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "1.1"
+    CURRENT_PROJECT_VERSION: "121"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: S47SL2JFSQ
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "hitvpn2026_AppStore_NewCert0930"
 targets:
   Jentacular:
     type: application
     platform: iOS
     sources:
       - path: Jentacular
+    resources:
+      - path: Jentacular/Resources/Assets.xcassets
+      - path: Jentacular/Resources/PrivacyInfo.xcprivacy
+      - path: Jentacular/Resources/en.lproj
+      - path: Jentacular/Resources/ru.lproj
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hitvpn.hitvpn2026
@@ -30,8 +37,12 @@ targets:
       path: Jentacular/Resources/Info.plist
       properties:
         CFBundleDisplayName: Jentacular vpn
+        CFBundleShortVersionString: "1.1"
+        CFBundleVersion: "121"
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities: [armv7]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
         NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoads: false

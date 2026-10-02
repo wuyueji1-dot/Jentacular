@@ -28,7 +28,7 @@ struct ServerRow: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primaryText)
 
-                    Text("\(server.city), \(server.country)")
+                    Text(String(format: L("server_location_format"), server.city, server.country))
                         .font(.system(size: 14))
                         .foregroundColor(.secondaryText)
 

@@ -13,42 +13,39 @@ struct AnalysisView: View {
     @EnvironmentObject var vpnService: VPNConnectionService
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Header
-                        headerSection
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    headerSection
 
-                        // Network status cards (2x2 grid)
-                        networkStatusGrid
+                    // Network status cards (2x2 grid)
+                    networkStatusGrid
 
-                        // Latency test
-                        latencyTestSection
+                    // Latency test
+                    latencyTestSection
 
-                        // Network stability
-                        stabilitySection
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 40)
+                    // Network stability
+                    stabilitySection
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
-            .navigationBarHidden(true)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarHidden(true)
     }
 
     // MARK: - Header Section
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Анализ сети")
+            Text(L("analysis_title"))
                 .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.primaryText)
 
-            Text("Анализ вашего соединения в реальном времени")
+            Text(L("analysis_subtitle"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondaryText)
         }
@@ -66,7 +63,7 @@ struct AnalysisView: View {
                 iconName: "wifi",
                 iconColor: .accentBlue,
                 value: analysisService.metrics.networkType,
-                label: "Тип сети"
+                label: L("network_type")
             )
 
             // IP Status
@@ -74,7 +71,7 @@ struct AnalysisView: View {
                 iconName: "eye",
                 iconColor: vpnService.connectionStatus == .connected ? .accentGreen : .accentGold,
                 value: ipStatusText,
-                label: "Статус IP"
+                label: L("ip_status")
             )
 
             // Availability
@@ -82,7 +79,7 @@ struct AnalysisView: View {
                 iconName: "antenna.radiowaves.left.and.right",
                 iconColor: analysisService.metrics.availability == .online ? .accentGreen : .accentRed,
                 value: availabilityText,
-                label: "Доступность"
+                label: L("availability")
             )
 
             // Throttling
@@ -90,21 +87,21 @@ struct AnalysisView: View {
                 iconName: "gauge.with.dots.needle.bottom.50percent",
                 iconColor: analysisService.metrics.throttling == .throttled ? .accentOrange : .accentGreen,
                 value: throttlingText,
-                label: "Лимитная"
+                label: L("throttling")
             )
         }
     }
 
     private var ipStatusText: String {
-        analysisService.metrics.ipStatus == .protected ? "Защищен" : "Открыт"
+        analysisService.metrics.ipStatus == .protected ? L("protected") : L("open")
     }
 
     private var availabilityText: String {
-        analysisService.metrics.availability == .online ? "В сети" : "Не в сети"
+        analysisService.metrics.availability == .online ? L("online") : L("offline")
     }
 
     private var throttlingText: String {
-        analysisService.metrics.throttling == .throttled ? "Да" : "Нет"
+        analysisService.metrics.throttling == .throttled ? L("yes") : L("no")
     }
 
     // MARK: - Latency Test Section
@@ -113,7 +110,7 @@ struct AnalysisView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Header
                 HStack {
-                    Text("Тест задержки")
+                    Text(L("latency_test"))
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.primaryText)
 
@@ -140,11 +137,11 @@ struct AnalysisView: View {
                             .font(.system(size: 42, weight: .bold))
                             .foregroundColor(.primaryText)
 
-                        Text("ms")
+                        Text(L("ms_unit"))
                             .font(.system(size: 16))
                             .foregroundColor(.secondaryText)
 
-                        Text("Задержка")
+                        Text(L("latency"))
                             .font(.system(size: 14))
                             .foregroundColor(.tertiaryText)
                     }
@@ -154,11 +151,11 @@ struct AnalysisView: View {
                             .font(.system(size: 42, weight: .bold))
                             .foregroundColor(.primaryText)
 
-                        Text("ms")
+                        Text(L("ms_unit"))
                             .font(.system(size: 16))
                             .foregroundColor(.secondaryText)
 
-                        Text("Джиттер")
+                        Text(L("jitter"))
                             .font(.system(size: 14))
                             .foregroundColor(.tertiaryText)
                     }
@@ -166,7 +163,7 @@ struct AnalysisView: View {
 
                 // Last test time
                 if let lastTest = analysisService.lastTestDate {
-                    Text("Последний тест: \(formattedDate(lastTest))")
+                    Text(String(format: L("last_test_format"), formattedDate(lastTest)))
                         .font(.system(size: 12))
                         .foregroundColor(.tertiaryText)
                 }
@@ -178,7 +175,7 @@ struct AnalysisView: View {
     private var stabilitySection: some View {
         CustomCard {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Стабильность сети")
+                Text(L("network_stability"))
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.primaryText)
 
@@ -219,13 +216,13 @@ struct AnalysisView: View {
     private var stabilityDescription: String {
         switch analysisService.metrics.stabilityPercent {
         case 0...30:
-            return "Нестабильное соединение. Возможны потери пакетов и обрывы."
+            return L("stability_poor")
         case 31...60:
-            return "Средняя стабильность. Рекомендуется выбрать сервер с меньшей загрузкой."
+            return L("stability_medium")
         case 61...85:
-            return "Хорошая стабильность. Соединение работает без значительных проблем."
+            return L("stability_good")
         default:
-            return "Отличная стабильность. Соединение работает идеально."
+            return L("stability_excellent")
         }
     }
 

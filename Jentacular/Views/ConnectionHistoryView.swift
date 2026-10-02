@@ -35,7 +35,7 @@ struct ConnectionHistoryView: View {
                     }
                 }
             }
-            .navigationTitle("История подключений")
+            .navigationTitle(L("connection_history_nav"))
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button(action: { dismiss() }) {
@@ -52,12 +52,12 @@ struct ConnectionHistoryView: View {
             )
             .alert(isPresented: $showClearConfirmation) {
                 Alert(
-                    title: Text("Очистить историю?"),
-                    message: Text("Все записи истории подключений будут удалены безвозвратно."),
-                    primaryButton: .destructive(Text("Очистить")) {
+                    title: Text(L("clear_history_confirm")),
+                    message: Text(L("clear_history_desc")),
+                    primaryButton: .destructive(Text(L("clear"))) {
                         historyService.clearHistory()
                     },
-                    secondaryButton: .cancel(Text("Отмена"))
+                    secondaryButton: .cancel(Text(L("cancel")))
                 )
             }
         }
@@ -70,11 +70,11 @@ struct ConnectionHistoryView: View {
                 .font(.system(size: 64))
                 .foregroundColor(.tertiaryText)
 
-            Text("История пуста")
+            Text(L("history_empty"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.primaryText)
 
-            Text("Здесь будут отображаться ваши подключения к VPN")
+            Text(L("history_empty_desc"))
                 .font(.system(size: 15))
                 .foregroundColor(.secondaryText)
                 .multilineTextAlignment(.center)
@@ -141,8 +141,8 @@ struct NetworkTypeBadge: View {
     private var displayText: String {
         switch type {
         case .wifi: return "Wi-Fi"
-        case .cellular: return "Сеть"
-        case .none: return "Нет сети"
+        case .cellular: return L("cellular")
+        case .none: return L("no_network")
         }
     }
 

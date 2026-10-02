@@ -87,6 +87,8 @@ struct NavigationRow: View {
                     .foregroundColor(.tertiaryText)
             }
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
     }

@@ -19,9 +19,8 @@ struct RootTabView: View {
     @State private var selectedTab: Tab
 
     init() {
-        // Debug support: allow setting initial tab via UserDefaults
-        let debugTab = UserDefaults.standard.integer(forKey: "DebugSelectedTab")
-        _selectedTab = State(initialValue: Tab(rawValue: debugTab) ?? .home)
+        let initialTabIndex = UserDefaults.standard.integer(forKey: "initial_tab")
+        _selectedTab = State(initialValue: Tab(rawValue: initialTabIndex) ?? .home)
     }
 
     enum Tab: Int, CaseIterable {
@@ -53,11 +52,11 @@ struct RootTabView: View {
 
         var title: String {
             switch self {
-            case .home: return "Главная"
-            case .shield: return "Щит"
-            case .servers: return "Серверы"
-            case .analysis: return "Анализ"
-            case .settings: return "Настройки"
+            case .home: return L("home_tab")
+            case .shield: return L("shield_tab")
+            case .servers: return L("servers_tab")
+            case .analysis: return L("analysis_tab")
+            case .settings: return L("settings_tab")
             }
         }
     }
