@@ -321,15 +321,12 @@ struct PrivacyConsentView: View {
                 .shadow(color: Color.accentBlue.opacity(0.4), radius: 12, x: 0, y: 6)
             }
             .buttonStyle(PlainButtonStyle())
-            .opacity(showContent ? 1 : 0)
-            .scaleEffect(showContent ? 1 : 0.9)
 
             // Disclaimer
             Text(L("accept_disclaimer"))
                 .font(.system(size: 12))
                 .foregroundColor(.tertiaryText)
                 .multilineTextAlignment(.center)
-                .opacity(showContent ? 1 : 0)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 30)
