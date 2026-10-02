@@ -46,3 +46,15 @@ targets:
         UIRequiresFullScreen: true
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
+
+  JentacularUITests:
+    type: ui-test-bundle
+    platform: iOS
+    sources:
+      - path: JentacularUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hitvpn.hitvpn2026.uitests
+        PRODUCT_NAME: JentacularUITests
+    dependencies:
+      - target: Jentacular
