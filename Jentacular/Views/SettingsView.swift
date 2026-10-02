@@ -13,7 +13,6 @@ struct SettingsView: View {
     @EnvironmentObject var historyService: ConnectionHistoryService
 
     // MARK: - State
-    @State private var showConnectionHistory = false
     @State private var showPrivacyCenter = false
     @State private var showLanguageSelection = false
     @State private var showAbout = false
