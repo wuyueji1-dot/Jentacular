@@ -11,7 +11,7 @@ settings:
     TARGETED_DEVICE_FAMILY: "1,2"
     ONLY_ACTIVE_ARCH: YES
     MARKETING_VERSION: "1.1"
-    CURRENT_PROJECT_VERSION: "130"
+    CURRENT_PROJECT_VERSION: "131"
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: S47SL2JFSQ
     CODE_SIGN_IDENTITY: "Apple Distribution"
@@ -38,7 +38,7 @@ targets:
       properties:
         CFBundleDisplayName: Jentacular vpn
         CFBundleShortVersionString: "1.1"
-        CFBundleVersion: "130"
+        CFBundleVersion: "131"
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities: [arm64]
@@ -46,15 +46,3 @@ targets:
         UIRequiresFullScreen: true
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
-
-  JentacularUITests:
-    type: ui-test-bundle
-    platform: iOS
-    sources:
-      - path: JentacularUITests
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.hitvpn.hitvpn2026.uitests
-        PRODUCT_NAME: JentacularUITests
-    dependencies:
-      - target: Jentacular
