@@ -206,7 +206,7 @@ struct SettingsView: View {
                     iconName: "info.circle.fill",
                     iconColor: .accentBlue,
                     title: L("about"),
-                    value: AppConstants.appVersion
+                    value: DeviceInfo.appVersion
                 ) {
                     showAbout = true
                 }
@@ -260,7 +260,7 @@ struct SettingsView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.secondaryText)
 
-            Text(String(format: L("version_format"), AppConstants.appVersion, AppConstants.buildNumber))
+            Text(String(format: L("version_format"), DeviceInfo.appVersion, DeviceInfo.appBuildNumber))
                 .font(.system(size: 14))
                 .foregroundColor(.tertiaryText)
         }
