@@ -14,13 +14,14 @@ struct AppBackgroundView: View {
         ZStack {
             Image(imageName)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .ignoresSafeArea()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
 
-            // Semi-transparent overlay for text readability
             Color.appBackground.opacity(0.75)
-                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .ignoresSafeArea()
     }
 }
 
