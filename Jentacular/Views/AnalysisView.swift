@@ -14,7 +14,7 @@ struct AnalysisView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            AppBackgroundView(imageName: AppBackgroundTheme.analysis)
 
             ScrollView {
                 VStack(spacing: 24) {
