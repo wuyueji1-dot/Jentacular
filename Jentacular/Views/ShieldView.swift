@@ -14,8 +14,6 @@ struct ShieldView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView(imageName: AppBackgroundTheme.shield)
-
             ScrollView {
                 VStack(spacing: 24) {
                     // Header
@@ -32,6 +30,7 @@ struct ShieldView: View {
                 .padding(.bottom, 40)
             }
         }
+        .background(AppBackgroundView(imageName: AppBackgroundTheme.shield))
         .navigationBarHidden(true)
         .onAppear {
             securityService.calculateSecurityScore()
