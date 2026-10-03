@@ -24,7 +24,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            AppBackgroundView(imageName: AppBackgroundTheme.settings)
 
             ScrollView {
                 VStack(spacing: 20) {
@@ -69,9 +69,6 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showNetworkTools) {
             NavigationView { NetworkToolsView() }
-        }
-        .sheet(isPresented: $showConnectionHistory) {
-            NavigationView { ConnectionHistoryView() }
         }
         .sheet(isPresented: $showDNSSettings) {
             NavigationView { DNSSettingsView() }
@@ -168,19 +165,6 @@ struct SettingsView: View {
                 SectionHeader(title: L("more"))
 
                 NavigationRow(
-                    iconName: "clock.arrow.circlepath",
-                    iconColor: .accentBlue,
-                    title: L("connection_history"),
-                    value: "\(historyService.totalConnections)"
-                ) {
-                    showConnectionHistory = true
-                }
-
-                Divider()
-                    .background(Color.dividerColor)
-                    .padding(.vertical, 8)
-
-                NavigationRow(
                     iconName: "hand.raised.fill",
                     iconColor: .accentPurple,
                     title: L("privacy_center"),
@@ -248,8 +232,8 @@ struct SettingsView: View {
                 NavigationRow(
                     iconName: "chart.bar.fill",
                     iconColor: .accentGreen,
-                    title: "Connection History",
-                    value: nil
+                    title: L("connection_history"),
+                    value: "\(historyService.totalConnections)"
                 ) {
                     showConnectionHistory = true
                 }
