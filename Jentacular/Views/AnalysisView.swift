@@ -14,8 +14,6 @@ struct AnalysisView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView(imageName: AppBackgroundTheme.analysis)
-
             ScrollView {
                 VStack(spacing: 24) {
                     // Header
@@ -35,6 +33,7 @@ struct AnalysisView: View {
                 .padding(.bottom, 40)
             }
         }
+        .background(AppBackgroundView(imageName: AppBackgroundTheme.analysis))
         .navigationBarHidden(true)
     }
 
