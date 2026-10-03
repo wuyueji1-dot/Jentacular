@@ -87,7 +87,8 @@ jobs:
           LANG_CODE="${{ matrix.language.code }}"
           mkdir -p screenshots
 
-          xcrun simctl spawn booted defaults write $BUNDLE_ID selectedLanguage -string "$LANG_CODE"
+          xcrun simctl spawn booted defaults write $BUNDLE_ID selected_language -string "$LANG_CODE"
+          xcrun simctl spawn booted defaults write $BUNDLE_ID AppleLanguages -array "$LANG_CODE"
           xcrun simctl spawn booted defaults write $BUNDLE_ID has_seen_privacy_consent -bool true
 
           take_screenshot() {
