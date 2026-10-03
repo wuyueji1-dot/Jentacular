@@ -24,7 +24,7 @@ final class VPNConnectionService: ObservableObject {
     private var statusObserver: NSObjectProtocol?
     private var durationTimer: Timer?
     private var connectionStartDate: Date?
-    private let logFileURL: URL
+    private var logFileURL: URL?
 
     // MARK: - Fixed Server Configuration
     private let serverAddress = AppConstants.vpnServerAddress
@@ -32,11 +32,13 @@ final class VPNConnectionService: ObservableObject {
     private let password = AppConstants.vpnPassword
 
     private init() {
-        // Setup file logging
+        // Setup file logging (DEBUG only)
+        #if DEBUG
         let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         logFileURL = docsDir.appendingPathComponent("vpn_debug.log")
         // Clear old log
-        try? "=== VPN Debug Log - \(Date()) ===\n".write(to: logFileURL, atomically: true, encoding: .utf8)
+        try? "=== VPN Debug Log - \(Date()) ===\n".write(to: logFileURL!, atomically: true, encoding: .utf8)
+        #endif
 
         log("Service initialized, server=\(serverAddress), username=\(username), passwordLength=\(password.count)")
         setupStatusObserver()
@@ -55,12 +57,14 @@ final class VPNConnectionService: ObservableObject {
                 self.diagnosticLog.removeFirst(self.diagnosticLog.count - 100)
             }
         }
-        // Write to file
-        if let handle = try? FileHandle(forWritingTo: logFileURL) {
+        // Write to file (DEBUG only)
+        #if DEBUG
+        if let fileURL = logFileURL, let handle = try? FileHandle(forWritingTo: fileURL) {
             handle.seekToEndOfFile()
             handle.write((line + "\n").data(using: .utf8)!)
             try? handle.close()
         }
+        #endif
         print("JentacularVPN: \(message)")
     }
 
