@@ -24,8 +24,6 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView(imageName: AppBackgroundTheme.settings)
-
             ScrollView {
                 VStack(spacing: 20) {
                     // Header
@@ -51,6 +49,7 @@ struct SettingsView: View {
                 .padding(.bottom, 40)
             }
         }
+        .background(AppBackgroundView(imageName: AppBackgroundTheme.settings))
         .navigationBarHidden(true)
         .sheet(isPresented: $showConnectionHistory) {
             NavigationView { ConnectionHistoryView() }
