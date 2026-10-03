@@ -62,12 +62,17 @@ final class ConnectionHistoryService: ObservableObject {
 
     // MARK: - Session Tracking
     func startSession(serverName: String, serverCountry: String) {
-        currentSessionStart = Date()
+        DispatchQueue.main.async {
+            self.currentSessionStart = Date()
+        }
         AppLogger.shared.info(.vpn, "Connection session started: \(serverName)")
     }
 
     func endSession(serverName: String, serverCountry: String, successful: Bool, avgPing: Int? = nil) {
-        guard let start = currentSessionStart else { return }
+        guard let start = currentSessionStart else {
+            AppLogger.shared.warning(.vpn, "endSession called without active session, skipping")
+            return
+        }
 
         let record = ConnectionHistoryRecord(
             id: UUID(),
@@ -81,13 +86,15 @@ final class ConnectionHistoryService: ObservableObject {
             wasSuccessful: successful
         )
 
-        records.insert(record, at: 0)
-        if records.count > maxRecords {
-            records = Array(records.prefix(maxRecords))
+        DispatchQueue.main.async {
+            self.records.insert(record, at: 0)
+            if self.records.count > self.maxRecords {
+                self.records = Array(self.records.prefix(self.maxRecords))
+            }
+            self.saveRecords()
+            self.currentSessionStart = nil
         }
-        saveRecords()
-        currentSessionStart = nil
-        AppLogger.shared.info(.vpn, "Connection session ended: \(record.formattedDuration), success=\(successful)")
+        AppLogger.shared.info(.vpn, "Connection session ended: \(record.formattedDuration), success=\(successful), records now \(records.count)")
     }
 
     // MARK: - Statistics
