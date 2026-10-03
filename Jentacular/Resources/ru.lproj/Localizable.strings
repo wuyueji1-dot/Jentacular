@@ -242,7 +242,7 @@
 "records_count" = "%d записей";
 "ms_unit" = "мс";
 "last_test_format" = "Последний тест: %@";
-"percent_unit" = "%%";
+"percent_unit" = "%";
 "out_of_100_format" = "%d / 100";
 "server_location_format" = "%@, %@";
 "ping_ms_format" = "%d мс";
