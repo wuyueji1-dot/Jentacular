@@ -141,14 +141,18 @@ final class VPNConnectionService: ObservableObject {
             if let error = error {
                 let nsError = error as NSError
                 self?.log("[loadExistingConfiguration] FAILED: domain=\(nsError.domain), code=\(nsError.code), desc=\(nsError.localizedDescription)")
-                self?.lastError = "Load failed: \(error.localizedDescription)"
+                DispatchQueue.main.async {
+                    self?.lastError = "Load failed: \(error.localizedDescription)"
+                }
                 return
             }
             guard let self = self else { return }
             let hasConfig = self.manager.protocolConfiguration != nil
             let isEnabled = self.manager.isEnabled
             self.log("[loadExistingConfiguration] SUCCESS: hasConfig=\(hasConfig), isEnabled=\(isEnabled)")
-            self.handleStatusChange()
+            DispatchQueue.main.async {
+                self.handleStatusChange()
+            }
         }
     }
 
@@ -171,7 +175,9 @@ final class VPNConnectionService: ObservableObject {
         // Store password in keychain and get persistent reference
         guard let passwordRef = storePasswordInKeychain() else {
             log("[buildIKEv2Protocol] FATAL: passwordReference is nil!")
-            lastError = "Keychain failed"
+            DispatchQueue.main.async {
+                self.lastError = "Keychain failed"
+            }
             return proto
         }
         proto.passwordReference = passwordRef
@@ -358,8 +364,10 @@ final class VPNConnectionService: ObservableObject {
     func disconnect() {
         log("[disconnect] Stopping VPN tunnel...")
         manager.connection.stopVPNTunnel()
-        connectionStatus = .disconnecting
-        stopDurationTimer()
+        DispatchQueue.main.async {
+            self.connectionStatus = .disconnecting
+            self.stopDurationTimer()
+        }
     }
 
     // MARK: - Toggle Connection
