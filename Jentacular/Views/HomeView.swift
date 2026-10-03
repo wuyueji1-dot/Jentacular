@@ -130,141 +130,163 @@ struct HomeView: View {
     // MARK: - Connect Button Section
     private var connectButtonSection: some View {
         VStack(spacing: 20) {
-            ZStack {
-                // Pulsing rings when connecting
-                if vpnService.connectionStatus == .connecting {
-                    ForEach(0..<3) { i in
-                        Circle()
-                            .stroke(buttonColor.opacity(0.3), lineWidth: 2)
-                            .frame(width: 160 + CGFloat(i * 30), height: 160 + CGFloat(i * 30))
-                            .opacity(pulseOpacity)
-                            .animation(
-                                Animation.easeOut(duration: 1.5)
-                                    .repeatForever(autoreverses: false)
-                                    .delay(Double(i) * 0.5),
-                                value: pulseOpacity
-                            )
-                    }
-                    .onAppear { pulseOpacity = 1.0 }
-                    .onDisappear { pulseOpacity = 0.0 }
+            connectButtonZone
+            loadingIndicatorZone
+            errorMessageZone
+            speedDisplayZone
+        }
+        .padding(.vertical, 20)
+        .onChange(of: vpnService.connectionStatus) { _, newStatus in
+            if newStatus == .connected {
+                flowRotation = 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    flowRotation = 360
+                    startSpeedSimulation()
                 }
-
-                // Flowing light ring when connected
-                if vpnService.connectionStatus == .connected {
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [
-                                    Color.accentGreen.opacity(0.0),
-                                    Color.accentGreen.opacity(0.8),
-                                    Color.accentCyan.opacity(0.9),
-                                    Color.accentGreen.opacity(0.8),
-                                    Color.accentGreen.opacity(0.0)
-                                ]),
-                                center: .center
-                            ),
-                            lineWidth: 4
-                        )
-                        .frame(width: 185, height: 185)
-                        .rotationEffect(.degrees(flowRotation))
-                        .animation(
-                            Animation.linear(duration: 2.5).repeatForever(autoreverses: false),
-                            value: flowRotation
-                        )
-                        .onAppear { flowRotation = 360; startSpeedSimulation() }
-                        .onDisappear { stopSpeedSimulation() }
-
-                    // Second slower flowing ring
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [
-                                    Color.accentCyan.opacity(0.0),
-                                    Color.accentCyan.opacity(0.5),
-                                    Color.accentGreen.opacity(0.6),
-                                    Color.accentCyan.opacity(0.0)
-                                ]),
-                                center: .center
-                            ),
-                            lineWidth: 2
-                        )
-                        .frame(width: 200, height: 200)
-                        .rotationEffect(.degrees(-flowRotation * 0.6))
-                        .animation(
-                            Animation.linear(duration: 4.0).repeatForever(autoreverses: false),
-                            value: flowRotation
-                        )
-                }
-
-                // Outer glow
-                Circle()
-                    .fill(buttonColor.opacity(0.2))
-                    .frame(width: 200, height: 200)
-                    .blur(radius: 20)
-
-                // Main button
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    Task {
-                        await vpnService.toggleConnection()
-                    }
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [buttonColor, buttonColor.opacity(0.85)]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 160, height: 160)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.25), lineWidth: 2)
-                            )
-                            .shadow(color: buttonColor.opacity(0.5), radius: 20, x: 0, y: 10)
-
-                        VStack(spacing: 10) {
-                            ZStack {
-                                Image(systemName: buttonIconName)
-                                    .font(.system(size: 48, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 60, height: 60)
-                                    .rotationEffect(
-                                        .degrees(vpnService.connectionStatus == .connecting ? 360 : 0),
-                                        anchor: .center
-                                    )
-                                    .animation(
-                                        vpnService.connectionStatus == .connecting ?
-                                            Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default,
-                                        value: vpnService.connectionStatus
-                                    )
-                            }
-                            .frame(width: 60, height: 60)
-
-                            Text(buttonTitle)
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .buttonStyle(PlainButtonStyle())
-                .scaleEffect(buttonScale)
-                .pressAction {
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        buttonScale = 0.95
-                    }
-                } onRelease: {
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        buttonScale = 1.0
-                    }
-                }
-                .disabled(vpnService.isLoading)
             }
-            .frame(height: 200)
+        }
+    }
 
-            // Loading indicator
+    // MARK: - Connect Button Zone
+    private var connectButtonZone: some View {
+        ZStack {
+            // Pulsing rings when connecting
+            if vpnService.connectionStatus == .connecting {
+                ForEach(0..<3) { i in
+                    Circle()
+                        .stroke(buttonColor.opacity(0.3), lineWidth: 2)
+                        .frame(width: 160 + CGFloat(i * 30), height: 160 + CGFloat(i * 30))
+                        .opacity(pulseOpacity)
+                        .animation(
+                            Animation.easeOut(duration: 1.5)
+                                .repeatForever(autoreverses: false)
+                                .delay(Double(i) * 0.5),
+                            value: pulseOpacity
+                        )
+                }
+                .onAppear { pulseOpacity = 1.0 }
+                .onDisappear { pulseOpacity = 0.0 }
+            }
+
+            // Flowing light ring when connected
+            if vpnService.connectionStatus == .connected {
+                Circle()
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [
+                                Color.accentGreen.opacity(0.0),
+                                Color.accentGreen.opacity(0.8),
+                                Color.accentCyan.opacity(0.9),
+                                Color.accentGreen.opacity(0.8),
+                                Color.accentGreen.opacity(0.0)
+                            ]),
+                            center: .center
+                        ),
+                        lineWidth: 4
+                    )
+                    .frame(width: 185, height: 185)
+                    .rotationEffect(.degrees(flowRotation))
+                    .animation(
+                        Animation.linear(duration: 2.5).repeatForever(autoreverses: false),
+                        value: flowRotation
+                    )
+                    .onAppear { flowRotation = 360; startSpeedSimulation() }
+                    .onDisappear { stopSpeedSimulation() }
+
+                // Second slower flowing ring
+                Circle()
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [
+                                Color.accentCyan.opacity(0.0),
+                                Color.accentCyan.opacity(0.5),
+                                Color.accentGreen.opacity(0.6),
+                                Color.accentCyan.opacity(0.0)
+                            ]),
+                            center: .center
+                        ),
+                        lineWidth: 2
+                    )
+                    .frame(width: 200, height: 200)
+                    .rotationEffect(.degrees(-flowRotation * 0.6))
+                    .animation(
+                        Animation.linear(duration: 4.0).repeatForever(autoreverses: false),
+                        value: flowRotation
+                    )
+            }
+
+            // Outer glow
+            Circle()
+                .fill(buttonColor.opacity(0.2))
+                .frame(width: 200, height: 200)
+                .blur(radius: 20)
+
+            // Main button
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Task {
+                    await vpnService.toggleConnection()
+                }
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [buttonColor, buttonColor.opacity(0.85)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 160, height: 160)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.25), lineWidth: 2)
+                        )
+                        .shadow(color: buttonColor.opacity(0.5), radius: 20, x: 0, y: 10)
+
+                    VStack(spacing: 10) {
+                        ZStack {
+                            Image(systemName: buttonIconName)
+                                .font(.system(size: 48, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 60, height: 60)
+                                .rotationEffect(
+                                    .degrees(vpnService.connectionStatus == .connecting ? 360 : 0),
+                                    anchor: .center
+                                )
+                                .animation(
+                                    vpnService.connectionStatus == .connecting ?
+                                        Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default,
+                                    value: vpnService.connectionStatus
+                                )
+                        }
+                        .frame(width: 60, height: 60)
+
+                        Text(buttonTitle)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .scaleEffect(buttonScale)
+            .pressAction {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    buttonScale = 0.95
+                }
+            } onRelease: {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    buttonScale = 1.0
+                }
+            }
+            .disabled(vpnService.isLoading)
+        }
+        .frame(height: 200)
+    }
+
+    // MARK: - Loading Indicator Zone
+    private var loadingIndicatorZone: some View {
+        Group {
             if vpnService.isLoading {
                 HStack(spacing: 8) {
                     ProgressView()
@@ -274,8 +296,12 @@ struct HomeView: View {
                         .foregroundColor(.secondaryText)
                 }
             }
+        }
+    }
 
-            // Error message
+    // MARK: - Error Message Zone
+    private var errorMessageZone: some View {
+        Group {
             if let error = vpnService.lastError {
                 Text(error)
                     .font(.system(size: 13))
@@ -283,8 +309,12 @@ struct HomeView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
             }
+        }
+    }
 
-            // Speed display when connected (valid, with real simulated values)
+    // MARK: - Speed Display Zone
+    private var speedDisplayZone: some View {
+        Group {
             if vpnService.connectionStatus == .connected {
                 HStack(spacing: 24) {
                     VStack(spacing: 4) {
@@ -330,16 +360,6 @@ struct HomeView: View {
                 .background(Color.cardBackground)
                 .cornerRadius(16)
                 .transition(.opacity.combined(with: .scale))
-            }
-        }
-        .padding(.vertical, 20)
-        .onChange(of: vpnService.connectionStatus) { _, newStatus in
-            if newStatus == .connected {
-                flowRotation = 0
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    flowRotation = 360
-                    startSpeedSimulation()
-                }
             }
         }
     }
