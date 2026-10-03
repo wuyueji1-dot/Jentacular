@@ -242,7 +242,7 @@
 "records_count" = "%d records";
 "ms_unit" = "ms";
 "last_test_format" = "Last test: %@";
-"percent_unit" = "%%";
+"percent_unit" = "%";
 "out_of_100_format" = "%d / 100";
 "server_location_format" = "%@, %@";
 "ping_ms_format" = "%d ms";
