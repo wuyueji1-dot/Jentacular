@@ -14,11 +14,14 @@ struct ServersView: View {
     @EnvironmentObject var pingService: PingService
 
     // MARK: - State
-    @State private var isButtonLoading = false
     @State private var showSortMenu = false
     @State private var selectedSort: ServerSortOption = .recommended
     @State private var searchText = ""
     @State private var selectedCountry = "all"
+
+    private var isVpnTransitioning: Bool {
+        vpnService.connectionStatus == .connecting || vpnService.connectionStatus == .disconnecting
+    }
 
     // MARK: - Single United States Server
     private let usServer = VPNServerNode(
@@ -35,7 +38,7 @@ struct ServersView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            AppBackgroundView(imageName: AppBackgroundTheme.servers)
 
             VStack(spacing: 0) {
                 // Header
@@ -56,20 +59,17 @@ struct ServersView: View {
                             ping: pingService.lastPingMs,
                             isPinging: pingService.isPinging,
                             isConnected: vpnService.connectionStatus == .connected,
-                            isButtonLoading: isButtonLoading,
+                            isButtonLoading: isVpnTransitioning,
                             onRefreshPing: {
                                 Task {
                                     await pingService.ping(host: AppConstants.vpnServerAddress)
                                 }
                             },
                             onConnect: {
-                                // Haptic feedback
                                 let generator = UIImpactFeedbackGenerator(style: .medium)
                                 generator.impactOccurred()
-                                isButtonLoading = true
                                 Task {
                                     await vpnService.toggleConnection()
-                                    await MainActor.run { isButtonLoading = false }
                                 }
                             }
                         )
@@ -85,6 +85,13 @@ struct ServersView: View {
         }
         .navigationBarTitle(L("servers_title"), displayMode: .inline)
         .navigationBarItems(leading: backButton)
+        .onAppear {
+            if pingService.lastPingMs == nil {
+                Task {
+                    await pingService.ping(host: AppConstants.vpnServerAddress)
+                }
+            }
+        }
     }
 
     // MARK: - Back Button
