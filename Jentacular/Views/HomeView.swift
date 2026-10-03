@@ -43,6 +43,7 @@ struct HomeView: View {
 
                         // Connect button with animation
                         connectButtonSection
+                            .padding(.bottom, -10)
 
                         // Connection info (shown when connected)
                         if vpnService.connectionStatus == .connected {
@@ -172,6 +173,15 @@ struct HomeView: View {
                         )
                         .onAppear { flowRotation = 360; startSpeedSimulation() }
                         .onDisappear { stopSpeedSimulation() }
+                        .onChange(of: vpnService.connectionStatus) { _, newStatus in
+                            if newStatus == .connected {
+                                flowRotation = 0
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                    flowRotation = 360
+                                    startSpeedSimulation()
+                                }
+                            }
+                        }
 
                     // Second slower flowing ring
                     Circle()
