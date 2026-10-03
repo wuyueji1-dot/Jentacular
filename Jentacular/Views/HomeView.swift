@@ -24,8 +24,6 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView(imageName: AppBackgroundTheme.home)
-
                 // Background gradient when connected
                 if vpnService.connectionStatus == .connected {
                     RadialGradient(
@@ -71,6 +69,7 @@ struct HomeView: View {
                 }
             }
         }
+        .background(AppBackgroundView(imageName: AppBackgroundTheme.home))
         .sheet(isPresented: $showServerList) {
             NavigationView { ServersView() }
         }
