@@ -14,7 +14,7 @@ struct ShieldView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            AppBackgroundView(imageName: AppBackgroundTheme.shield)
 
             ScrollView {
                 VStack(spacing: 24) {
