@@ -136,7 +136,7 @@ struct HomeView: View {
             speedDisplayZone
         }
         .padding(.vertical, 20)
-        .onChange(of: vpnService.connectionStatus) { _, newStatus in
+        .onChange(of: vpnService.connectionStatus) { newStatus in
             if newStatus == .connected {
                 flowRotation = 0
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
