@@ -38,8 +38,6 @@ struct ServersView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView(imageName: AppBackgroundTheme.servers)
-
             VStack(spacing: 0) {
                 // Header
                 headerSection
@@ -83,6 +81,7 @@ struct ServersView: View {
                 }
             }
         }
+        .background(AppBackgroundView(imageName: AppBackgroundTheme.servers))
         .navigationBarTitle(L("servers_title"), displayMode: .inline)
         .navigationBarItems(leading: backButton)
         .onAppear {
