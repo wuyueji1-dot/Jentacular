@@ -24,7 +24,7 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground.ignoresSafeArea()
+            AppBackgroundView(imageName: AppBackgroundTheme.home)
 
                 // Background gradient when connected
                 if vpnService.connectionStatus == .connected {
