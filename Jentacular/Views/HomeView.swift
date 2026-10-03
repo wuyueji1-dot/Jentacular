@@ -173,15 +173,6 @@ struct HomeView: View {
                         )
                         .onAppear { flowRotation = 360; startSpeedSimulation() }
                         .onDisappear { stopSpeedSimulation() }
-                        .onChange(of: vpnService.connectionStatus) { _, newStatus in
-                            if newStatus == .connected {
-                                flowRotation = 0
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                    flowRotation = 360
-                                    startSpeedSimulation()
-                                }
-                            }
-                        }
 
                     // Second slower flowing ring
                     Circle()
@@ -342,6 +333,15 @@ struct HomeView: View {
             }
         }
         .padding(.vertical, 20)
+        .onChange(of: vpnService.connectionStatus) { _, newStatus in
+            if newStatus == .connected {
+                flowRotation = 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    flowRotation = 360
+                    startSpeedSimulation()
+                }
+            }
+        }
     }
 
     // MARK: - Speed Simulation
